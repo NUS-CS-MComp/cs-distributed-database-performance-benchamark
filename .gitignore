@@ -1,1 +1,8 @@
 cassandra/project-files/
+certs*
+cockroachdb/infrastructure/bin
+cockroachdb/infrastructure/keys
+cockroachdb/infrastructure/server_ssh
+
+__pycache__
+.DS_Store
