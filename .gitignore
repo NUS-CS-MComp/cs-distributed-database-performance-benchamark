@@ -1,9 +1,9 @@
 cassandra/project-files/
-cockroachdb/infrastructure/bin
-cockroachdb/infrastructure/dev/node*
-cockroachdb/infrastructure/**/certs*
-cockroachdb/infrastructure/**/keys
-cockroachdb/infrastructure/**/server_ssh
+cockroachdb/scripts/bin
+cockroachdb/scripts/dev/node*
+cockroachdb/scripts/**/certs*
+cockroachdb/scripts/**/keys
+cockroachdb/scripts/**/server_ssh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
