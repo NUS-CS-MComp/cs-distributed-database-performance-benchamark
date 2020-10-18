@@ -1,4 +1,7 @@
 #!/bin/zsh
+'''
+Script used to open connection to cockroach db in all nodes
+'''
 
 source ./config.sh
 

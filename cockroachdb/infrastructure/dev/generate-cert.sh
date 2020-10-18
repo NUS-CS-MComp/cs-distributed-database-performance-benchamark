@@ -1,4 +1,7 @@
 #!/bin/zsh
+'''
+Script used to generate certificates for cockroach db in all nodes
+'''
 
 source ./config.sh
 
