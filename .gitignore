@@ -147,3 +147,5 @@ cython_debug/
 # miscellaneous
 .DS_Store
 .idea
+.env
+.env.prod
