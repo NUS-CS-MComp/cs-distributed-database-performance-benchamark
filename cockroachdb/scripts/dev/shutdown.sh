@@ -1,8 +1,4 @@
 #!/bin/zsh
-'''
-Script used to shutdown connection to cockroach db in all nodes
-'''
-
 
 source ./config.sh
 
