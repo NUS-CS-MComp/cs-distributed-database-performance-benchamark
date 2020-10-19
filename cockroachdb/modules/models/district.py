@@ -4,6 +4,7 @@ from peewee import (
     CharField,
     FixedCharField,
     DecimalField,
+    CompositeKey,
 )
 
 from cockroachdb.modules.models.base import BaseModel
@@ -11,7 +12,7 @@ from cockroachdb.modules.models.warehouse import Warehouse
 
 
 class District(BaseModel):
-    id = IntegerField(column_name="d_id", primary_key=True, null=False)
+    id = IntegerField(column_name="d_id", null=False)
     warehouse_id = ForeignKeyField(
         Warehouse, backref="w_id", column_name="d_w_id", null=False
     )
@@ -32,3 +33,6 @@ class District(BaseModel):
         default=0.00,
     )
     next_order_id = IntegerField(column_name="d_next_o_id")
+
+    class Meta:
+        primary_key = CompositeKey("warehouse_id", "id")

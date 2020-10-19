@@ -51,5 +51,4 @@ class Stock(BaseModel):
     data = CharField(column_name="s_data", max_length=500)
 
     class Meta:
-        indexes = ((("s_w_id", "s_i_id"), True),)
-        primary_key = CompositeKey("s_w_id", "s_i_id")
+        primary_key = CompositeKey("warehouse_id", "item_id")
