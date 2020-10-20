@@ -10,7 +10,7 @@ class BaseTransaction(ABC):
     @database.atomic()
     def run(self, print_to_console=True, *args, **kwargs):
         outputs = self._execute(*args, **kwargs)
-        if print_to_console:
+        if print_to_console and outputs is not None:
             BaseTransaction._print_divider()
             self._output_result(*outputs)
             BaseTransaction._print_divider()

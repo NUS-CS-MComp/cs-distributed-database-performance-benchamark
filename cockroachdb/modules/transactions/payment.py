@@ -14,8 +14,8 @@ class PaymentTransaction(BaseTransaction):
     Payment transaction
 
     Example:
-        new_order = PaymentTransaction((1, 1, 1), Decimal('99.99'))
-        new_order.run()
+        payment = PaymentTransaction((1, 1, 1), Decimal('99.99'))
+        payment.run()
     """
 
     def __init__(

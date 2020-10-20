@@ -6,6 +6,7 @@ from peewee import (
     FixedCharField,
     DateTimeField,
     DecimalField,
+    FloatField,
     CompositeKey,
     SQL,
 )
@@ -45,7 +46,7 @@ class Customer(BaseModel):
         null=False,
         default=0.00,
     )
-    ytd_payment = DecimalField(
+    ytd_payment = FloatField(
         column_name="c_ytd_payment", null=False, default=0.00
     )
     payment_count = IntegerField(
