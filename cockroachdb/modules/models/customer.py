@@ -57,6 +57,18 @@ class Customer(BaseModel):
     )
     data = CharField(column_name="c_data", max_length=500)
 
+    @property
+    def formatted_name(self):
+        """
+        Getter for formatted customer name
+        :return: formatted customer name
+        """
+        return (
+            f"{self.first_name} {self.last_name}"
+            if self.middle_name is None
+            else f"{self.middle_name} {self.first_name} {self.last_name}"
+        )
+
     class Meta:
         primary_key = CompositeKey("warehouse_id", "district_id", "id")
         constraints = [

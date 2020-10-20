@@ -70,18 +70,22 @@ class NewOrderTransaction(BaseTransaction):
             num_items, item_number, supplier_warehouse, quantity
         )
 
-    def _execute(self):
+    def _execute(
+        self,
+    ) -> Tuple[
+        Customer, Warehouse, District, Order, Decimal, List[NewOrderItemOutput]
+    ]:
         """
         Execute new order transaction
-        :return: None
+        :return: relevant output information
         """
         # Get warehouse, district and customer information
-        warehouse = Warehouse.get_by_id(Warehouse.id)
-        district = District.get(
+        warehouse: Warehouse = Warehouse.get_by_id(Warehouse.id)
+        district: District = District.get(
             (District.warehouse_id == self.warehouse_id)
             & (District.id == self.district_id)
         )
-        customer = Customer.get_by_id(
+        customer: Customer = Customer.get_by_id(
             (self.warehouse_id, self.district_id, self.customer_id)
         )
         order = self._create_new_order(district)
@@ -97,7 +101,7 @@ class NewOrderTransaction(BaseTransaction):
             item_record: Item = Item.get_by_id(item["id"])
             adjusted_qty = self._update_stock(item_stock, item)
             item_amount = self._create_new_order_line(
-                order, index, item, item_record
+                order, index + 1, item, item_record
             )
             total_amount += item_amount
             items_updated.append(
@@ -244,7 +248,7 @@ class NewOrderTransaction(BaseTransaction):
             f"Warehouse/District Tax Rate: {'{:.2%}'.format(warehouse.tax)}/{'{:.2%}'.format(district.tax)}"
         )
         console.print(
-            f"Order Number: {order.id}, Created at {order.entry_date.strftime('%b %d, %Y, %X (UTC)')}"
+            f"Order Number: {order.id}, Created at {order.formatted_entry_date}"
         )
         console.print(f"Number of Items: {len(self.items)}")
         console.print(f"Total Amount: {'{:.2f}'.format(total_amount)}")

@@ -32,6 +32,18 @@ class OrderLine(BaseModel):
     )
     dist_info = CharField(column_name="ol_dist_info", max_length=24)
 
+    @property
+    def formatted_delivery_date(self):
+        """
+        Getter for formatted delivery date
+        :return: formatted delivery date
+        """
+        return (
+            None
+            if self.delivery_date is None
+            else self.delivery_date.strftime("%b %d, %Y, %X (UTC)")
+        )
+
     class Meta:
         primary_key = CompositeKey(
             "number", "order_id", "warehouse_id", "district_id"

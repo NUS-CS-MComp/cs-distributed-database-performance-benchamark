@@ -24,6 +24,14 @@ class Order(BaseModel):
         column_name="o_entry_d", default=datetime.utcnow()
     )
 
+    @property
+    def formatted_entry_date(self):
+        """
+        Getter for formatted entry date
+        :return: formatted entry date
+        """
+        return self.entry_date.strftime("%b %d, %Y, %X (UTC)")
+
     class Meta:
         primary_key = CompositeKey("warehouse_id", "district_id", "id")
         constraints = [

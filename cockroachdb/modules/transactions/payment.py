@@ -35,10 +35,10 @@ class PaymentTransaction(BaseTransaction):
         ) = customer_identifier
         self.payment_amount = payment_amount
 
-    def _execute(self):
+    def _execute(self) -> Tuple[Customer, District, Warehouse]:
         """
         Execute new payment transaction
-        :return: None
+        :return: relevant model instance information
         """
         # Update warehouse, district YTD amount
         Warehouse.update(ytd=Warehouse.ytd + self.payment_amount).where(
@@ -99,11 +99,6 @@ class PaymentTransaction(BaseTransaction):
         identifier = (
             f"({self.warehouse_id}, {self.district_id}, {self.customer_id})"
         )
-        customer_name = (
-            f"{customer.first_name} {customer.last_name}"
-            if customer.middle_name is None
-            else f"{customer.middle_name} {customer.first_name} {customer.last_name}"
-        )
         console.print(
             f"New Payment Details from Customer {identifier}:".upper()
         )
@@ -117,7 +112,7 @@ class PaymentTransaction(BaseTransaction):
         customer_table.add_column("Discount")
         customer_table.add_column("Balance")
         customer_table.add_row(
-            customer_name,
+            customer.formatted_name,
             format_address(customer),
             customer.phone_number,
             customer.since.strftime("%b %d, %Y"),

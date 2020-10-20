@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS order_line
     FOREIGN KEY (OL_W_ID, OL_D_ID, OL_O_ID) REFERENCES "order" (O_W_ID, O_D_ID, O_ID)
 );
 
+CREATE INDEX idx_order_line_by_warehouse_district_order_id ON order_line (OL_O_ID, OL_W_ID, OL_D_ID);
+
 CREATE TABLE IF NOT EXISTS stock
 (
     S_W_ID       INTEGER       NOT NULL REFERENCES warehouse (W_ID),
