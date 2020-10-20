@@ -1,4 +1,7 @@
+from decimal import Decimal
 from typing import List, Tuple, TypedDict
+
+from rich.table import Table
 
 from cockroachdb.modules.models import (
     Customer,
@@ -85,7 +88,7 @@ class NewOrderTransaction(BaseTransaction):
         logger.info(f"Processing new order for customer {customer}")
 
         # Calculate amounts and update stock and order line records
-        total_amount = 0
+        total_amount = Decimal("0.00")
         items_updated: List[NewOrderItemOutput] = []
         for index, item in enumerate(self.items):
             item_stock: Stock = Stock.get_by_id(
@@ -112,8 +115,14 @@ class NewOrderTransaction(BaseTransaction):
             * (1 + district.tax + warehouse.tax)
             * (1 - customer.discount)
         )
-        self._output_result(
-            customer, warehouse, district, order, total_amount, items_updated
+
+        return (
+            customer,
+            warehouse,
+            district,
+            order,
+            total_amount,
+            items_updated,
         )
 
     def _create_new_order(self, district: District):
@@ -181,7 +190,7 @@ class NewOrderTransaction(BaseTransaction):
         :param item_record: Item model instance
         :return: calculated amount for specific item
         """
-        amount = item["quantity"] * item_record.price
+        amount = item["quantity"] * Decimal(item_record.price)
         OrderLine.create(
             number=line_number,
             order_id=order.id,
@@ -221,7 +230,7 @@ class NewOrderTransaction(BaseTransaction):
         customer_credit = (
             "{:s}".format(customer.credit)
             if customer.credit is not None
-            else "N/A"
+            else "None"
         )
         customer_discount = "{:.2%}".format(customer.discount)
         console.print(
@@ -237,26 +246,23 @@ class NewOrderTransaction(BaseTransaction):
         console.print(
             f"Order Number: {order.id}, Created at {order.entry_date.strftime('%b %d, %Y, %X (UTC)')}"
         )
-        console.print(
-            f"Number of Items/Total Amount: {len(self.items)}/{'{:.2f}'.format(total_amount)}"
-        )
-        console.print("====================================================")
-        console.print(
-            "{:>6s} | {:^10s} | {:^6s} | {:^10s} | {:^6s} |".format(
-                "Line #", "Item Name", "Qty", "Amount", "Stock"
-            )
-        )
-        order_line_row = "{index:>6d} | {name:^10s} | {quantity:^6.0f} | {amount:^10.2f} | {stock:^6.0f} |".format
+        console.print(f"Number of Items: {len(self.items)}")
+        console.print(f"Total Amount: {'{:.2f}'.format(total_amount)}")
+        order_line_table = Table(show_header=True, expand=True)
+        order_line_table.add_column("Line #")
+        order_line_table.add_column("Item Name")
+        order_line_table.add_column("Quantity")
+        order_line_table.add_column("Amount")
+        order_line_table.add_column("Stock")
         for index, item in enumerate(items):
-            console.print(
-                order_line_row(
-                    index=index + 1,
-                    name=item["name"],
-                    quantity=item["quantity"],
-                    amount=item["order_line_amount"],
-                    stock=item["stock"],
-                )
+            order_line_table.add_row(
+                str(index + 1),
+                item["name"],
+                str(item["quantity"]),
+                str(item["order_line_amount"]),
+                str(item["stock"]),
             )
+        console.print(order_line_table)
 
     @property
     def transaction_name(self):
