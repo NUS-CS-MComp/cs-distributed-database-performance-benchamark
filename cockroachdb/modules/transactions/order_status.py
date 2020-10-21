@@ -1,6 +1,5 @@
 from typing import Tuple, Iterable, List
 
-from peewee import fn
 from rich.table import Table
 
 from cockroachdb.modules.models import Customer, Order, OrderLine
@@ -38,47 +37,15 @@ class OrderStatusTransaction(BaseTransaction):
             (self.warehouse_id, self.district_id, self.customer_id)
         )
 
-        # Subquery to search for order with latest timestamp
-        LatestOrder = Order.alias()
-        latest_order = (
-            LatestOrder.select(fn.MAX(LatestOrder.entry_date).alias("date"))
-            .join(
-                Customer,
-                on=(
-                    (LatestOrder.warehouse_id == Customer.warehouse_id)
-                    & (LatestOrder.district_id == Customer.district_id)
-                    & (LatestOrder.customer_id == Customer.id)
-                ),
-            )
-            .where(
-                (Customer.id == self.customer_id)
-                & (Customer.warehouse_id == self.warehouse_id)
-                & (Customer.district_id == self.district_id)
-            )
-            .cte("latest_order")
-        )
-
-        # Retrieve order with specified latest order CTE
+        # Retrieve latest order
         order: Order = (
             Order.select(Order)
-            .join(
-                Customer,
-                on=(
-                    (Order.warehouse_id == Customer.warehouse_id)
-                    & (Order.district_id == Customer.district_id)
-                    & (Order.customer_id == Customer.id)
-                ),
-            )
             .where(
-                (Customer.id == self.customer_id)
-                & (Customer.warehouse_id == self.warehouse_id)
-                & (Customer.district_id == self.district_id)
-                & (
-                    Order.entry_date
-                    == (latest_order.select(latest_order.c.date))
-                )
+                (Order.customer_id == self.customer_id)
+                & (Order.warehouse_id == self.warehouse_id)
+                & (Order.district_id == self.district_id)
             )
-            .with_cte(latest_order)
+            .order_by(Order.entry_date.desc())
             .get()
         )
 
