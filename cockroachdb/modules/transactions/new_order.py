@@ -308,5 +308,6 @@ class NewOrderTransaction(BaseTransaction):
                     item_number, supplier_warehouse, quantity
                 )
             ]
-        except AssertionError:
-            logger.exception("New Order inputs are not in correct format")
+        except AssertionError as e:
+            logger.exception(e)
+            raise AssertionError("New Order inputs are not in correct format")
