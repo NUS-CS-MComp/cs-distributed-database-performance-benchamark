@@ -48,7 +48,7 @@ class Stock(BaseModel):
     dist_info_08 = CharField(column_name="s_dist_08", max_length=24)
     dist_info_09 = CharField(column_name="s_dist_09", max_length=24)
     dist_info_10 = CharField(column_name="s_dist_10", max_length=24)
-    data = CharField(column_name="s_data", max_length=500)
+    data = CharField(column_name="s_data", max_length=50)
 
     class Meta:
         primary_key = CompositeKey("warehouse_id", "item_id")

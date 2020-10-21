@@ -72,7 +72,7 @@ class OrderStatusTransaction(BaseTransaction):
         :return: None
         """
         console.print(
-            f"Order Status for Customer {customer.formatted_name} (End Balance: {customer.balance})".upper()
+            f"Order Status for Customer {customer.formatted_name} (End Balance: {customer.balance}):".upper()
         )
 
         # Print order table

@@ -32,7 +32,9 @@ class District(BaseModel):
         null=False,
         default=0.00,
     )
-    next_order_id = IntegerField(column_name="d_next_o_id")
+    next_order_id = IntegerField(
+        column_name="d_next_o_id", null=False, default=1
+    )
 
     class Meta:
         primary_key = CompositeKey("warehouse_id", "id")

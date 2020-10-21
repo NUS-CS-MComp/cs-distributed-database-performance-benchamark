@@ -42,7 +42,7 @@ class Customer(BaseModel):
     balance = DecimalField(
         column_name="c_balance",
         max_digits=12,
-        decimal_places=4,
+        decimal_places=2,
         null=False,
         default=0.00,
     )

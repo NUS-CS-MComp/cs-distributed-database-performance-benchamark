@@ -55,3 +55,4 @@ class OrderLine(BaseModel):
                 "REFERENCES order (o_w_id, o_d_id, o_id)"
             )
         ]
+        indexes = (("warehouse_id", "district_id", "order_id"), False)
