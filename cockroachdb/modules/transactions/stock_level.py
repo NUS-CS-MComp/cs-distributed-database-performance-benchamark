@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from cockroachdb.modules.models import District, OrderLine, Stock
 from cockroachdb.modules.transactions.base import BaseTransaction
@@ -33,7 +33,7 @@ class StockLevelTransaction(BaseTransaction):
         self.stock_threshold = stock_threshold
         self.num_of_orders = num_of_orders
 
-    def _execute(self) -> int:
+    def _execute(self) -> Tuple[int]:
         """
         Execute stock level transaction
         :return: number of items with lower stock quantity than threshold
@@ -64,22 +64,21 @@ class StockLevelTransaction(BaseTransaction):
         for stock in stocks:
             items.append(str(stock.item_id))
 
-        # return number of unique items
-        return len(set(items))
+        # return amount of unique ites
+        return (len(set(items)),)
 
 
 
     def _output_result(
-        self, num_of_items: int
+        self, num_of_items: int,
     ):
         """
         Output execution result 
         :param num_of_items
-
         :return: None
         """
         console.print(
-            f"Number of items in stock where its stock quantity at the warehouse is smaller than threshold: {num_of_items}"
+            "Number of items in stock where its stock quantity at the warehouse is smaller than threshold: " + str(num_of_items)
         )
 
 
