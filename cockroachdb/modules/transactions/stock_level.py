@@ -10,8 +10,8 @@ class StockLevelTransaction(BaseTransaction):
     Stock level transaction
 
     Example:
-        payment = StockLevelTransaction(1, 1, 10, 5)
-        payment.run()
+        stock_level = StockLevelTransaction(1, 1, 10, 5)
+        stock_level.run()
     """
 
     def __init__(
