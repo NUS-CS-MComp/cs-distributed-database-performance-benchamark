@@ -88,7 +88,6 @@ class NewOrderTransaction(BaseTransaction):
             (self.warehouse_id, self.district_id, self.customer_id)
         )
         order = self._create_new_order(district)
-        logger.info(f"Processing new order for customer {customer}")
 
         # Calculate amounts and update stock and order line records
         total_amount = Decimal("0.00")
