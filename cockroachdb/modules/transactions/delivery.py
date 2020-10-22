@@ -24,6 +24,7 @@ class DeliveryTransaction(BaseTransaction):
         :param warehouse_id: warehouse number
         :param carrier_id: carrier identifier
         """
+        super().__init__()
         self.warehouse_id = warehouse_id
         self.carrier_id = carrier_id
 

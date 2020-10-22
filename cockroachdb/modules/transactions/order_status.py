@@ -1,10 +1,7 @@
 from typing import Tuple, Iterable, List
 
-from rich.table import Table
-
 from cockroachdb.modules.models import Customer, Order, OrderLine
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import console
 
 
 class OrderStatusTransaction(BaseTransaction):
@@ -21,6 +18,7 @@ class OrderStatusTransaction(BaseTransaction):
         Initiate a transaction returning current order status for a specific customer
         :param customer_identifier: customer identifier in the form (warehouse, district, customer)
         """
+        super().__init__()
         (
             self.warehouse_id,
             self.district_id,
@@ -71,37 +69,49 @@ class OrderStatusTransaction(BaseTransaction):
         :param order_lines: OrderLine model instances
         :return: None
         """
-        console.print(
-            f"Order Status for Customer {customer.formatted_name} (End Balance: {customer.balance}):".upper()
+        self.print(
+            f"Order Status for Customer {customer.formatted_name} (End Balance: {customer.balance}):",
+            is_heading=True,
         )
 
         # Print order table
-        order_table = Table(show_header=True, expand=True)
-        order_table.add_column("Order Number")
-        order_table.add_column("Entry Date")
-        order_table.add_column("Carrier ID")
-        order_table.add_row(
-            str(order.id), order.formatted_entry_date, str(order.carrier_id)
+        self.print_table(
+            columns=[
+                {"header": "Order Number"},
+                {"header": "Entry Date"},
+                {"header": "Carrier ID"},
+            ],
+            rows=[
+                [
+                    str(order.id),
+                    order.formatted_entry_date,
+                    str(order.carrier_id),
+                ]
+            ],
         )
 
         # Print order line table
-        order_line_table = Table(show_header=True, expand=True)
-        order_line_table.add_column("Line #")
-        order_line_table.add_column("Supplier Warehouse")
-        order_line_table.add_column("Quantity")
-        order_line_table.add_column("Amount")
-        order_line_table.add_column("Delivery Date", no_wrap=True)
+        line_items = []
         for order_line in order_lines:
-            order_line_table.add_row(
-                str(order_line.number),
-                str(order_line.supplying_warehouse_id),
-                str(order_line.quantity),
-                str(order_line.amount),
-                order_line.formatted_delivery_date,
+            line_items.append(
+                [
+                    str(order_line.number),
+                    str(order_line.supplying_warehouse_id),
+                    str(order_line.quantity),
+                    str(order_line.amount),
+                    order_line.formatted_delivery_date,
+                ]
             )
-
-        console.print(order_table)
-        console.print(order_line_table)
+        self.print_table(
+            columns=[
+                {"header": "Line #"},
+                {"header": "Supplier Warehouse"},
+                {"header": "Quantity"},
+                {"header": "Amount"},
+                {"header": "Delivery Date", "no_wrap": True},
+            ],
+            rows=line_items,
+        )
 
     @property
     def transaction_name(self):

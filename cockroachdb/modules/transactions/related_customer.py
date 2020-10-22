@@ -213,7 +213,8 @@ class RelatedCustomerTransaction(BaseTransaction):
         :return: None
         """
         self.print(
-            f"Related Customer to ({self.warehouse_id}, {self.district_id}, {self.customer_id}):".upper()
+            f"Related Customer to ({self.warehouse_id}, {self.district_id}, {self.customer_id}):",
+            is_heading=True,
         )
         row_data: List[List[str]] = []
         for customer in customers:

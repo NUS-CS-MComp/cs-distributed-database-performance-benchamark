@@ -3,11 +3,9 @@ from decimal import Decimal
 from typing import TypedDict, List, Tuple, Dict
 
 from peewee import fn, Case
-from rich.table import Table
 
 from cockroachdb.modules.models import Customer, Item, Order, OrderLine
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import console
 
 
 class PopularItemsOutput(TypedDict):
@@ -63,6 +61,7 @@ class PopularItemsTransaction(BaseTransaction):
         :param district_id: district identifier
         :param orders_to_examine: number of items to examine
         """
+        super().__init__()
         self.warehouse_id = warehouse_id
         self.district_id = district_id
         self.orders_to_examine = orders_to_examine
@@ -176,19 +175,13 @@ class PopularItemsTransaction(BaseTransaction):
             """
             return f"{name} (QTY: {quantity})"
 
-        console.print(
-            f"Popular Items Summary from {self.orders_to_examine} Orders from Warehouse {self.warehouse_id}, District {self.district_id}:".upper()
+        self.print(
+            f"Popular Items Summary from {self.orders_to_examine} Orders from Warehouse {self.warehouse_id}, District {self.district_id}:",
+            is_heading=True,
         )
-        order_table = Table(show_header=True, expand=True)
-        order_table.add_column("Order Number")
-        order_table.add_column("Order Date")
-        order_table.add_column("Customer Name")
-        order_table.add_column("Popular Items")
 
-        item_table = Table(show_header=True, expand=True)
-        item_table.add_column("Item ID")
-        item_table.add_column("Item Name")
-        item_table.add_column("Percentage of Orders Containing This Item")
+        order_table_rows = []
+        item_table_rows = []
 
         orders: Dict[int, OrderOutput] = {}
         items: Dict[int, ItemOutput] = {}
@@ -216,11 +209,13 @@ class PopularItemsTransaction(BaseTransaction):
 
         for order in orders.values():
             order = order
-            order_table.add_row(
-                str(order["order_id"]),
-                order["entry_date"].strftime("%b %d, %Y, %X (UTC)"),
-                order["customer_name"],
-                "\n".join(order["popular_items"]),
+            order_table_rows.append(
+                [
+                    str(order["order_id"]),
+                    order["entry_date"].strftime("%b %d, %Y, %X (UTC)"),
+                    order["customer_name"],
+                    "\n".join(order["popular_items"]),
+                ]
             )
 
         for item_id, item_output in sorted(
@@ -229,12 +224,31 @@ class PopularItemsTransaction(BaseTransaction):
             reverse=True,
         ):
             percentage = len(item_output["orders"]) * 1.0 / len(orders)
-            item_table.add_row(
-                str(item_id), item_output["name"], "{:2.2%}".format(percentage)
+            item_table_rows.append(
+                [
+                    str(item_id),
+                    item_output["name"],
+                    "{:2.2%}".format(percentage),
+                ]
             )
 
-        console.print(order_table)
-        console.print(item_table)
+        self.print_table(
+            columns=[
+                {"header": "Order Number"},
+                {"header": "Order Date"},
+                {"header": "Customer Name"},
+                {"header": "Popular Items"},
+            ],
+            rows=order_table_rows,
+        )
+        self.print_table(
+            columns=[
+                {"header": "Item ID"},
+                {"header": "Item Name"},
+                {"header": "Percentage of Orders Containing This Item"},
+            ],
+            rows=item_table_rows,
+        )
 
     @property
     def transaction_name(self):

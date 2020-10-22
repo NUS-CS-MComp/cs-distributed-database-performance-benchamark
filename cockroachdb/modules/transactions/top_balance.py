@@ -1,20 +1,22 @@
-from typing import List, Tuple, TypedDict
 from decimal import Decimal
-from rich.table import Table
-from peewee import fn
+from typing import List, Tuple, TypedDict
+
+from peewee import fn, Case
 
 from cockroachdb.modules.models import Customer, Warehouse, District
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import console
+
 
 class TopBalanceOutput(TypedDict):
     """
     Top Balance output dict representation
     """
+
     customer_name: str
     customer_balance: Decimal
     warehouse_name: str
     district_name: str
+
 
 class TopBalanceTransaction(BaseTransaction):
     """
@@ -25,63 +27,81 @@ class TopBalanceTransaction(BaseTransaction):
         top_balance.run()
     """
 
-    def __init__(
-        self,
-    ):
-        """
-        Initiate a transaction to query customers with top balance
-        """
+    LIMIT = 10
+
     def _execute(self) -> Tuple[List[TopBalanceOutput]]:
         """
         Execute stock level transaction
         :return: number of items with lower stock quantity than threshold
         """
 
-        # get customers with warehouse and district information
-        customer_query = (Customer
-                          .select(
-                              fn.CONCAT(
-                                  Customer.first_name,
-                                  Customer.middle_name,
-                                  Customer.last_name,
-                                  ).alias("customer_name"),
-                              Customer.balance.alias("customer_balance"),
-                              Warehouse.name.alias("warehouse_name"),
-                              District.name.alias("district_name"),
-                              )
-                          .join(Warehouse, on = (Customer.warehouse_id == Warehouse.id))
-                          .join(District, on = (Customer.district_id == District.id))
-                          .order_by(Customer.balance.desc())
-                          .limit(10)
-                          )        
-        
-        return([result for result in customer_query.dicts()],)
+        # Get customers with warehouse and district information
+        customer_query = (
+            Customer.select(
+                Case(
+                    None,
+                    (
+                        (
+                            Customer.middle_name.is_null(),
+                            fn.CONCAT(
+                                Customer.first_name,
+                                " ",
+                                Customer.last_name,
+                            ),
+                        ),
+                    ),
+                    fn.CONCAT(
+                        Customer.first_name,
+                        Customer.middle_name,
+                        Customer.last_name,
+                    ),
+                ).alias("customer_name"),
+                Customer.balance.alias("customer_balance"),
+                Warehouse.name.alias("warehouse_name"),
+                District.name.alias("district_name"),
+            )
+            .join(
+                District,
+                on=(
+                    (Customer.warehouse_id == District.warehouse_id)
+                    & (Customer.district_id == District.id)
+                ),
+            )
+            .join(Warehouse, on=(District.warehouse_id == Warehouse.id))
+            .order_by(Customer.balance.desc())
+            .limit(TopBalanceTransaction.LIMIT)
+        )
 
+        return ([result for result in customer_query.dicts()],)
 
     def _output_result(
-        self, top_balance_customers: TopBalanceOutput,
+        self,
+        top_balance_customers: List[TopBalanceOutput],
     ):
         """
-        Output execution result 
-        :param TopBalanceOutput
+        Output execution result
+        :param top_balance_customers
         :return: None
         """
-        result_table = Table(show_header=True, expand=True)
-        result_table.add_column("Customer Name")
-        result_table.add_column("Customer Balance")
-        result_table.add_column("Warehouse Name")
-        result_table.add_column("District Name")
-        
-        for item in TopBalanceOutput:
-            result_table.add_row(
-                item["customer_name"],
-                item["customer_balance"],
-                item["warehouse_name"],
-                item["district_name"],
+        customers = []
+        for item in top_balance_customers:
+            customers.append(
+                [
+                    item["customer_name"],
+                    str(item["customer_balance"]),
+                    item["warehouse_name"],
+                    item["district_name"],
+                ]
             )
-            
-        console.print(result_table)
-
+        self.print_table(
+            columns=[
+                {"header": "Customer Name"},
+                {"header": "Customer Balance"},
+                {"header": "Warehouse Name"},
+                {"header": "District Name"},
+            ],
+            rows=customers,
+        )
 
     @property
     def transaction_name(self):

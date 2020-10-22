@@ -1,8 +1,7 @@
-from typing import Iterable, List, Tuple
+from typing import Tuple
 
-from cockroachdb.modules.models import District, OrderLine, Stock
+from cockroachdb.modules.models import District, Order, OrderLine, Stock
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import console
 
 
 class StockLevelTransaction(BaseTransaction):
@@ -18,69 +17,108 @@ class StockLevelTransaction(BaseTransaction):
         self,
         warehouse_id: int,
         district_id: int,
-        stock_threshold: int,
-        num_of_orders: int
+        threshold: int,
+        order_offset: int,
     ):
         """
         Initiate a transaction to query stock level information
         :param warehouse_id: warehouse id
         :param district_id: district id
-        :param stock_threshold: threshold for the stock level
-        :param num_of_orders: number of last orders to be examined
+        :param threshold: threshold for the stock level
+        :param order_offset: number of last orders to be examined
         """
+        super().__init__()
         self.warehouse_id = warehouse_id
         self.district_id = district_id
-        self.stock_threshold = stock_threshold
-        self.num_of_orders = num_of_orders
+        self.threshold = threshold
+        self.order_offset = order_offset
 
     def _execute(self) -> Tuple[int]:
         """
         Execute stock level transaction
         :return: number of items with lower stock quantity than threshold
         """
-        # Retrieve district
-        district: District = District.get(
-            (District.warehouse_id == self.warehouse_id)
-            & (District.id == self.district_id)
+        # Retrieve orders from given district
+        order_from_district: Order = (
+            Order.select(
+                Order.warehouse_id.alias("warehouse_id"),
+                Order.district_id.alias("district_id"),
+                Order.id.alias("id"),
+            )
+            .join(
+                District,
+                on=(
+                    (Order.warehouse_id == District.warehouse_id)
+                    & (Order.district_id == District.id)
+                ),
+            )
+            .where(
+                (Order.warehouse_id == self.warehouse_id)
+                & (Order.district_id == self.district_id)
+                & (Order.id >= District.next_order_id - self.order_offset)
+            )
         )
 
-        # get all stocks fulfing requrements        
-        stock_query: Iterable[Stock] = (Stock
-                                        .select(Stock.item_id)
-                                        .join(OrderLine, on = ((Stock.warehouse_id == OrderLine.warehouse_id)
-                                                               & (Stock.item_id == OrderLine.item_id)))
-                                        .where(
-                                            (OrderLine.warehouse_id == self.warehouse_id)
-                                            & (OrderLine.district_id == self.district_id)
-                                            & (OrderLine.order_id >= (district.next_order_id - self.num_of_orders ))
-                                            & (Stock.quantity < self.stock_threshold )
-                                            ))
-        
-        stocks: List[Stock] = [
-            stock for stock in stock_query
-        ]
-        
-        items = []
-        for stock in stocks:
-            items.append(str(stock.item_id))
+        # Get distinct order lines
+        order_lines_from_order = (
+            OrderLine.select(
+                OrderLine.warehouse_id.alias("warehouse_id"),
+                OrderLine.item_id.alias("item_id"),
+            )
+            .distinct()
+            .join(
+                order_from_district,
+                on=(
+                    (
+                        OrderLine.warehouse_id
+                        == order_from_district.c.warehouse_id
+                    )
+                    & (
+                        OrderLine.district_id
+                        == order_from_district.c.district_id
+                    )
+                    & (OrderLine.order_id == order_from_district.c.id)
+                ),
+            )
+            .where(
+                (OrderLine.warehouse_id == self.warehouse_id)
+                & (OrderLine.district_id == self.district_id)
+            )
+        )
 
-        # return amount of unique ites
-        return (len(set(items)),)
+        # Get stocks and determine counts of those below threshold
+        below_threshold_count = (
+            Stock.select()
+            .join(
+                order_lines_from_order,
+                on=(
+                    (
+                        Stock.warehouse_id
+                        == order_lines_from_order.c.warehouse_id
+                    )
+                    & (Stock.item_id == order_lines_from_order.c.item_id)
+                ),
+            )
+            .where(Stock.quantity <= self.threshold)
+            .count()
+        )
 
-
+        return (below_threshold_count,)
 
     def _output_result(
-        self, num_of_items: int,
+        self,
+        num_of_items: int,
     ):
         """
-        Output execution result 
+        Output execution result
         :param num_of_items
         :return: None
         """
-        console.print(
-            "Number of items in stock where its stock quantity at the warehouse is smaller than threshold: " + str(num_of_items)
+        self.print(
+            "Number of items in stock where its stock quantity at the warehouse is smaller than threshold: "
+            + str(num_of_items),
+            is_heading=True,
         )
-
 
     @property
     def transaction_name(self):

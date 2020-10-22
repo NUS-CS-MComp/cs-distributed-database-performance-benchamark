@@ -1,12 +1,9 @@
 from decimal import Decimal
 from typing import Tuple
 
-from rich.table import Table
-
 from cockroachdb.modules.models import Warehouse, District, Customer
 from cockroachdb.modules.models.base import BaseModel
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import console
 
 
 class PaymentTransaction(BaseTransaction):
@@ -28,6 +25,7 @@ class PaymentTransaction(BaseTransaction):
         :param customer_identifier: customer identifier in the form (warehouse, district, customer)
         :param payment_amount: payment amount in Decimal format
         """
+        super().__init__()
         (
             self.warehouse_id,
             self.district_id,
@@ -99,34 +97,36 @@ class PaymentTransaction(BaseTransaction):
         identifier = (
             f"({self.warehouse_id}, {self.district_id}, {self.customer_id})"
         )
-        console.print(
-            f"New Payment Details from Customer {identifier}:".upper()
+        self.print(
+            f"New Payment Details from Customer {identifier}:", is_heading=True
         )
-        customer_table = Table(show_header=True, expand=True)
-        customer_table.add_column("Name")
-        customer_table.add_column("Address")
-        customer_table.add_column("Phone")
-        customer_table.add_column("Since")
-        customer_table.add_column("Credit")
-        customer_table.add_column("Credit Limit")
-        customer_table.add_column("Discount")
-        customer_table.add_column("Balance")
-        customer_table.add_row(
-            customer.formatted_name,
-            format_address(customer),
-            customer.phone_number,
-            customer.since.strftime("%b %d, %Y"),
-            customer.credit,
-            customer.credit_limit,
-            "{:.2%}".format(customer.discount),
-            "{:.2f}".format(customer.balance),
+        self.print_table(
+            columns=[
+                {"header": "Name"},
+                {"header": "Address"},
+                {"header": "Phone"},
+                {"header": "Since"},
+                {"header": "Credit"},
+                {"header": "Credit Limit"},
+                {"header": "Discount"},
+                {"header": "Balance"},
+            ],
+            rows=[
+                [
+                    customer.formatted_name,
+                    format_address(customer),
+                    customer.phone_number,
+                    customer.since.strftime("%b %d, %Y"),
+                    customer.credit,
+                    customer.credit_limit,
+                    "{:.2%}".format(customer.discount),
+                    "{:.2f}".format(customer.balance),
+                ]
+            ],
         )
-        console.print(customer_table)
-        console.print(f"Warehouse Address: {format_address(warehouse)}")
-        console.print(f"District Address: {format_address(district)}")
-        console.print(
-            f"Payment Amount: {'{:.2f}'.format(self.payment_amount)}"
-        )
+        self.print(f"Warehouse Address: {format_address(warehouse)}")
+        self.print(f"District Address: {format_address(district)}")
+        self.print(f"Payment Amount: {'{:.2f}'.format(self.payment_amount)}")
 
     @property
     def transaction_name(self):

@@ -1,8 +1,6 @@
 from decimal import Decimal
 from typing import List, Tuple, TypedDict
 
-from rich.table import Table
-
 from cockroachdb.modules.models import (
     Customer,
     District,
@@ -13,7 +11,7 @@ from cockroachdb.modules.models import (
     Warehouse,
 )
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import console, logger
+from common.logging import logger
 
 
 class NewOrderItemInput(TypedDict):
@@ -61,6 +59,7 @@ class NewOrderTransaction(BaseTransaction):
         :param supplier_warehouse: list of supplier warehouses whose length equals num_items
         :param quantity: list of quantities whose length equals num_items
         """
+        super().__init__()
         (
             self.warehouse_id,
             self.district_id,
@@ -237,36 +236,43 @@ class NewOrderTransaction(BaseTransaction):
             else "None"
         )
         customer_discount = "{:.2%}".format(customer.discount)
-        console.print(
-            f"New Order #{order.id} (Warehouse {warehouse.id}, District {district.id}) Details:".upper()
+        self.print(
+            f"New Order #{order.id} (Warehouse {warehouse.id}, District {district.id}) Details:",
+            is_heading=True,
         )
-        console.print(f"Customer Identifier: {identifier}")
-        console.print(
+        self.print(f"Customer Identifier: {identifier}")
+        self.print(
             f"Customer Details: {customer.last_name} (Credit: {customer_credit}, Discount: {customer_discount})"
         )
-        console.print(
+        self.print(
             f"Warehouse/District Tax Rate: {'{:.2%}'.format(warehouse.tax)}/{'{:.2%}'.format(district.tax)}"
         )
-        console.print(
+        self.print(
             f"Order Number: {order.id}, Created at {order.formatted_entry_date}"
         )
-        console.print(f"Number of Items: {len(self.items)}")
-        console.print(f"Total Amount: {'{:.2f}'.format(total_amount)}")
-        order_line_table = Table(show_header=True, expand=True)
-        order_line_table.add_column("Line #")
-        order_line_table.add_column("Item Name")
-        order_line_table.add_column("Quantity")
-        order_line_table.add_column("Amount")
-        order_line_table.add_column("Stock")
+        self.print(f"Number of Items: {len(self.items)}")
+        self.print(f"Total Amount: {'{:.2f}'.format(total_amount)}")
+        order_lines = []
         for index, item in enumerate(items):
-            order_line_table.add_row(
-                str(index + 1),
-                item["name"],
-                str(item["quantity"]),
-                str(item["order_line_amount"]),
-                str(item["stock"]),
+            order_lines.append(
+                [
+                    str(index + 1),
+                    item["name"],
+                    str(item["quantity"]),
+                    str(item["order_line_amount"]),
+                    str(item["stock"]),
+                ]
             )
-        console.print(order_line_table)
+        self.print_table(
+            columns=[
+                {"header": "Line #"},
+                {"header": "Item Name"},
+                {"header": "Quantity"},
+                {"header": "Amount"},
+                {"header": "Stock"},
+            ],
+            rows=order_lines,
+        )
 
     @property
     def transaction_name(self):
