@@ -34,12 +34,20 @@ CREATE TABLE district (
     D_ZIP       varchar,
     D_TAX       decimal,
     D_YTD       decimal,
-    D_NEXT_O_ID int,
+    D_O_ID_OFST int,
     PRIMARY KEY (D_W_ID, D_ID)  -- D_W_ID is the partition key
 );
-COPY district (D_W_ID, D_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX, D_YTD, D_NEXT_O_ID)
+COPY district (D_W_ID, D_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX, D_YTD, D_O_ID_OFST)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/district.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
+
+DROP TABLE IF EXISTS district_counters;
+CREATE TABLE district_counters (
+    D_W_ID      int,
+    D_ID        int,
+    D_O_COUNTER counter,
+    PRIMARY KEY (D_W_ID, D_ID)
+);
 
 DROP TABLE IF EXISTS customer;
 CREATE TABLE customer (
@@ -143,3 +151,13 @@ COPY stock (S_W_ID, S_I_ID, S_QUANTITY, S_YTD, S_ORDER_CNT, S_REMOTE_CNT,
     S_DIST_1, S_DIST_2, S_DIST_3, S_DIST_4, S_DIST_5, S_DIST_6, S_DIST_7, S_DIST_8, S_DIST_9, S_DIST_10, S_DATA)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/stock.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
+
+DROP TABLE IF EXISTS stock_counters;
+CREATE TABLE stock_counters (
+    S_W_ID              int,
+    S_I_ID              int,
+    S_YTD_CHANGE        counter,
+    S_ORDER_CNT_CHANGE  counter,
+    S_REMOTE_CNT_CHANGE counter,
+    PRIMARY KEY (S_W_ID, S_I_ID)
+);
