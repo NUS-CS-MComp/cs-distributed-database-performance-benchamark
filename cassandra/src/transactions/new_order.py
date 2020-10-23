@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
-from cassandra.cluster import Cluster
 from datetime import datetime
-
-
-def _single_select(session, query, data=None, default=0):
-    rows = session.execute(query, data)
-    for row in rows:
-        return row[0]
-    return default
+from transactions import utils
 
 
 def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity):
     # Step 1
     n = 0
-    n = _single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
-    n += _single_select(session, 'SELECT D_O_COUNTER from district_counters WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    n += utils.single_select(session, 'SELECT D_O_COUNTER from district_counters WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
 
     # Step 2
     session.execute('UPDATE district_counters SET D_O_COUNTER = D_O_COUNTER + 1 WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
@@ -40,7 +33,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     adjusted_qty = []
     for i in range(num_items):
         # Step 5a
-        s_quantity = _single_select(session, 'SELECT S_QUANTITY FROM stock WHERE S_W_ID = %s AND S_I_ID = %s',
+        s_quantity = utils.single_select(session, 'SELECT S_QUANTITY FROM stock WHERE S_W_ID = %s AND S_I_ID = %s',
             (supplier_warehouse[i], item_number[i]))
         # Step 5b
         adjusted_qty.append(s_quantity - quantity[i])
@@ -68,13 +61,13 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
                 (supplier_warehouse[i], item_number[i])
             )
         # Step 5e
-        i_price = _single_select(session, 'SELECT I_PRICE FROM item WHERE I_ID = %s', (item_number[i],))
+        i_price = utils.single_select(session, 'SELECT I_PRICE FROM item WHERE I_ID = %s', (item_number[i],))
         item_amount.append(quantity[i] * i_price)
         # Step 5f
         total_amount += item_amount[i]
         # Step 5g
         dist_name = 'S_DIST_' + str(d_id)
-        dist_info = _single_select(session, 'SELECT {} FROM stock WHERE S_W_ID = {} AND S_I_ID = {}'.format(dist_name, supplier_warehouse[i], item_number[i]))
+        dist_info = utils.single_select(session, 'SELECT {} FROM stock WHERE S_W_ID = {} AND S_I_ID = {}'.format(dist_name, supplier_warehouse[i], item_number[i]))
         session.execute(
             '''
             INSERT INTO order_line (OL_O_ID, OL_D_ID, OL_W_ID, OL_NUMBER, OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DIST_INFO)
@@ -84,9 +77,9 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         )
     
     # Step 6
-    w_tax = _single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
-    d_tax = _single_select(session, 'SELECT D_TAX FROM district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
-    c_discount = _single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
+    w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
+    d_tax = utils.single_select(session, 'SELECT D_TAX FROM district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    c_discount = utils.single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 
     # Output
@@ -108,16 +101,6 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     output['total_amount'] = total_amount
     output['item_infos'] = []
     for i in range(num_items):
-        i_name = _single_select(session, 'SELECT I_NAME FROM item WHERE I_ID = %s', (item_number[i],))
+        i_name = utils.single_select(session, 'SELECT I_NAME FROM item WHERE I_ID = %s', (item_number[i],))
         output['item_infos'].append((item_number[i], i_name, supplier_warehouse[i], quantity[i], item_amount[i], adjusted_qty[i]))
     return output
-
-
-cluster = Cluster(['127.0.0.1'], port=6042)
-session = cluster.connect('cs5424')
-
-item_number = [68195, 26567]
-supplier_warehouse = [1, 1]
-quantity = [1, 5]
-output = new_order(session, 1, 1, 1279, 2, item_number, supplier_warehouse, quantity)
-print(output)
