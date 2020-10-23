@@ -22,6 +22,12 @@ COPY warehouse (W_ID, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/warehouse.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
+DROP TABLE IF EXISTS warehouse_counters;
+CREATE TABLE warehouse_counters (
+    W_ID            int PRIMARY KEY,
+    W_YTD_CHANGE    counter
+);
+
 DROP TABLE IF EXISTS district;
 CREATE TABLE district (
     D_W_ID      int,
@@ -43,9 +49,10 @@ WITH DELIMITER=',' AND HEADER=FALSE;
 
 DROP TABLE IF EXISTS district_counters;
 CREATE TABLE district_counters (
-    D_W_ID      int,
-    D_ID        int,
-    D_O_COUNTER counter,
+    D_W_ID          int,
+    D_ID            int,
+    D_YTD_CHANGE    counter,
+    D_O_COUNTER     counter,
     PRIMARY KEY (D_W_ID, D_ID)
 );
 
@@ -79,6 +86,17 @@ COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_ST
     C_PAYMENT_CNT, C_DELIVERY_CNT, C_DATA)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/customer.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
+
+DROP TABLE IF EXISTS customer_counters;
+CREATE TABLE customer_counters (
+    C_W_ID                  int,
+    C_D_ID                  int,
+    C_ID                    int,
+    C_BALANCE_CHANGE        counter,
+    C_YTD_PAYMENT_CHANGE    counter,
+    C_PAYMENT_CNT_CHANGE    counter,
+    PRIMARY KEY (C_W_ID, C_D_ID, C_ID)
+);
 
 DROP TABLE IF EXISTS orders;    -- `order' cannot be used as table's name in Cassandra
 CREATE TABLE orders (
