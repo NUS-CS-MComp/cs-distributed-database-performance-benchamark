@@ -1,6 +1,7 @@
 from cassandra.cluster import Cluster
 from transactions.new_order import *
 from transactions.payment import *
+from transactions.delivery import *
 
 
 if __name__ == '__main__':
@@ -15,3 +16,5 @@ if __name__ == '__main__':
 
     output = payment(session, 1, 2, 186, 22378)
     print(output)
+
+    output = delivery(session, 1, 7)

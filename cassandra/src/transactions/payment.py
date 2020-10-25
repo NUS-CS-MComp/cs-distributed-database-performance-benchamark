@@ -3,8 +3,9 @@ from transactions import utils
 
 
 def payment(session, c_w_id, c_d_id, c_id, amount):
-    session.execute('UPDATE warehouse_counters SET W_YTD_CHANGE = W_YTD_CHANGE + %s WHERE W_ID = %s', (amount, c_w_id))
-    session.execute('UPDATE district_counters SET D_YTD_CHANGE = D_YTD_CHANGE + %s WHERE D_W_ID = %s AND D_ID = %s', (amount, c_w_id, c_d_id))
+    cents = int(amount * 100)
+    session.execute('UPDATE warehouse_counters SET W_YTD_CHANGE = W_YTD_CHANGE + %s WHERE W_ID = %s', (cents, c_w_id))
+    session.execute('UPDATE district_counters SET D_YTD_CHANGE = D_YTD_CHANGE + %s WHERE D_W_ID = %s AND D_ID = %s', (cents, c_w_id, c_d_id))
     session.execute(
         '''
         UPDATE customer_counters
@@ -13,7 +14,7 @@ def payment(session, c_w_id, c_d_id, c_id, amount):
             C_PAYMENT_CNT_CHANGE = C_PAYMENT_CNT_CHANGE + 1
         WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s
         ''',
-        (amount, amount, c_w_id, c_d_id, c_id)
+        (cents, cents, c_w_id, c_d_id, c_id)
     )
 
     output = {}
