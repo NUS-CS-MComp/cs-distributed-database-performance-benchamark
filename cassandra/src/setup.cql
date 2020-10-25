@@ -8,7 +8,8 @@ USE cs5424;
 
 DROP TABLE IF EXISTS warehouse;
 CREATE TABLE warehouse (
-    W_ID        int PRIMARY KEY,
+    W_CONST     varchar PRIMARY KEY,    # constant partition key to store the whole table on the same node
+    W_ID        int,
     W_NAME      varchar,
     W_STREET_1  varchar,
     W_STREET_2  varchar,
@@ -18,7 +19,7 @@ CREATE TABLE warehouse (
     W_TAX       decimal,
     W_YTD       decimal
 );
-COPY warehouse (W_ID, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_TAX, W_YTD)
+COPY warehouse (W_CONST, W_ID, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_TAX, W_YTD)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/warehouse.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
@@ -30,6 +31,7 @@ CREATE TABLE warehouse_counters (
 
 DROP TABLE IF EXISTS district;
 CREATE TABLE district (
+    D_CONST     varchar,    # constant partition key to store the whole table on the same node
     D_W_ID      int,
     D_ID        int,
     D_NAME      varchar,
@@ -41,9 +43,9 @@ CREATE TABLE district (
     D_TAX       decimal,
     D_YTD       decimal,
     D_O_ID_OFST int,
-    PRIMARY KEY (D_W_ID, D_ID)  -- D_W_ID is the partition key
+    PRIMARY KEY (D_CONST, D_W_ID, D_ID)  -- D_CONST is the partition key
 );
-COPY district (D_W_ID, D_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX, D_YTD, D_O_ID_OFST)
+COPY district (D_CONST, D_W_ID, D_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX, D_YTD, D_O_ID_OFST)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/district.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
@@ -79,8 +81,9 @@ CREATE TABLE customer (
     C_PAYMENT_CNT   int,
     C_DELIVERY_CNT  int,
     C_DATA          varchar,
-    PRIMARY KEY (C_W_ID, C_D_ID, C_ID)  -- C_W_ID is the partition key
-);
+    PRIMARY KEY ((C_W_ID, C_D_ID), C_BALANCE)  -- C_W_ID and C_D_ID is the partition key
+)
+WITH CLUSTERING ORDER BY (C_BALANCE DESC);
 COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
     C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_BALANCE, C_YTD_PAYMENT,
     C_PAYMENT_CNT, C_DELIVERY_CNT, C_DATA)
@@ -108,8 +111,9 @@ CREATE TABLE orders (
     O_OL_CNT        decimal,
     O_ALL_LOCAL     decimal,
     O_ENTRY_D       timestamp,
-    PRIMARY KEY (O_W_ID, O_D_ID, O_ID)  -- O_W_ID is the partition key
-);
+    PRIMARY KEY ((O_W_ID, O_D_ID), O_ID)  -- O_W_ID and O_D_ID is the partition key
+)
+WITH CLUSTERING ORDER BY (O_ID DESC);
 COPY orders (O_W_ID, O_D_ID, O_ID, O_C_ID, O_CARRIER_ID, O_OL_CNT, O_ALL_LOCAL, O_ENTRY_D)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/order.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
@@ -138,7 +142,7 @@ CREATE TABLE order_line (
     OL_SUPPLY_W_ID  int,
     OL_QUANTITY     decimal,
     OL_DIST_INFO    varchar,
-    PRIMARY KEY (OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)  -- OL_W_ID is the partition key
+    PRIMARY KEY ((OL_W_ID, OL_D_ID), OL_O_ID, OL_NUMBER)  -- OL_W_ID and OL_D_ID is the partition key
 );
 COPY order_line (OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER, OL_I_ID, OL_DELIVER_D, OL_AMOUNT, OL_SUPPLY_W_ID, OL_QUANTITY, OL_DIST_INFO)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/order-line.csv'
