@@ -51,7 +51,7 @@ DROP TABLE IF EXISTS district_counters;
 CREATE TABLE district_counters (
     D_W_ID          int,
     D_ID            int,
-    D_YTD_CHANGE    counter,
+    D_YTD_CHANGE    counter,    -- number of cents
     D_O_COUNTER     counter,
     PRIMARY KEY (D_W_ID, D_ID)
 );
@@ -92,9 +92,10 @@ CREATE TABLE customer_counters (
     C_W_ID                  int,
     C_D_ID                  int,
     C_ID                    int,
-    C_BALANCE_CHANGE        counter,
-    C_YTD_PAYMENT_CHANGE    counter,
+    C_BALANCE_CHANGE        counter,    -- number of cents
+    C_YTD_PAYMENT_CHANGE    counter,    -- number of cents
     C_PAYMENT_CNT_CHANGE    counter,
+    C_DELIVERY_CNT_CHANGE   counter,
     PRIMARY KEY (C_W_ID, C_D_ID, C_ID)
 );
 
@@ -105,8 +106,8 @@ CREATE TABLE orders (
     O_ID            int,
     O_C_ID          int,
     O_CARRIER_ID    varchar,    -- `null' exists at this column in CSV file, use varchar as a workaround
-    O_OL_CNT        decimal,
-    O_ALL_LOCAL     decimal,
+    O_OL_CNT        int,
+    O_ALL_LOCAL     int,
     O_ENTRY_D       timestamp,
     PRIMARY KEY (O_W_ID, O_D_ID, O_ID)  -- O_W_ID is the partition key
 );
@@ -133,14 +134,14 @@ CREATE TABLE order_line (
     OL_O_ID         int,
     OL_NUMBER       int,
     OL_I_ID         int,
-    OL_DELIVER_D    varchar,    -- `null' exists in CSV
+    OL_DELIVERY_D   varchar,    -- `null' exists in CSV
     OL_AMOUNT       decimal,
     OL_SUPPLY_W_ID  int,
-    OL_QUANTITY     decimal,
+    OL_QUANTITY     int,
     OL_DIST_INFO    varchar,
     PRIMARY KEY (OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)  -- OL_W_ID is the partition key
 );
-COPY order_line (OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER, OL_I_ID, OL_DELIVER_D, OL_AMOUNT, OL_SUPPLY_W_ID, OL_QUANTITY, OL_DIST_INFO)
+COPY order_line (OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER, OL_I_ID, OL_DELIVERY_D, OL_AMOUNT, OL_SUPPLY_W_ID, OL_QUANTITY, OL_DIST_INFO)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/order-line.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
@@ -148,7 +149,7 @@ DROP TABLE IF EXISTS stock;
 CREATE TABLE stock (
     S_W_ID          int,
     S_I_ID          int,
-    S_QUANTITY      decimal,
+    S_QUANTITY      int,
     S_YTD           decimal,
     S_ORDER_CNT     int,
     S_REMOTE_CNT    int,
