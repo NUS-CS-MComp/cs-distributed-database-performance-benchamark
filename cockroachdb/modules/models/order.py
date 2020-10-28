@@ -13,7 +13,7 @@ class Order(BaseModel):
     )
     district_id = IntegerField(column_name="o_d_id", null=False)
     customer_id = IntegerField(column_name="o_c_id", null=False)
-    carrier_id = IntegerField(column_name="o_carrier_id", null=False)
+    carrier_id = IntegerField(column_name="o_carrier_id", null=True)
     order_line_count = DecimalField(
         column_name="o_ol_cnt", max_digits=2, decimal_places=0, null=False
     )
