@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 from datetime import datetime
 from transactions import utils
+from transactions.utils import Constants
 
 
 def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity):
     # Step 1
     n = 0
-    n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
-    n += utils.single_select(session, 'SELECT D_O_COUNTER from district_counters WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_CONST = %s AND D_W_ID = %s AND D_ID = %s',
+        (Constants.CONST_PARTITION_KEY_DISTRICT, w_id, d_id))
+    n += utils.single_select(session, 'SELECT D_O_COUNTER from district_counters WHERE D_CONST = %s AND D_W_ID = %s AND D_ID = %s',
+        (Constants.CONST_PARTITION_KEY_DISTRICT, w_id, d_id))
 
     # Step 2
-    session.execute('UPDATE district_counters SET D_O_COUNTER = D_O_COUNTER + 1 WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    session.execute('UPDATE district_counters SET D_O_COUNTER = D_O_COUNTER + 1 WHERE D_CONST = %s AND D_W_ID = %s AND D_ID = %s',
+        (Constants.CONST_PARTITION_KEY_DISTRICT, w_id, d_id))
 
     # Step 3
     all_local = 1
@@ -77,8 +81,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         )
     
     # Step 6
-    w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
-    d_tax = utils.single_select(session, 'SELECT D_TAX FROM district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_CONST = %s AND W_ID = %s',
+        (Constants.CONST_PARTITION_KEY_WAREHOUSE, w_id))
+    d_tax = utils.single_select(session, 'SELECT D_TAX FROM district WHERE D_CONST = %s AND D_W_ID = %s AND D_ID = %s',
+        (Constants.CONST_PARTITION_KEY_DISTRICT, w_id, d_id))
     c_discount = utils.single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 

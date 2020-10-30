@@ -8,7 +8,7 @@ USE cs5424;
 
 DROP TABLE IF EXISTS warehouse;
 CREATE TABLE warehouse (
-    W_CONST     varchar PRIMARY KEY,    # constant partition key to store the whole table on the same node
+    W_CONST     varchar,    -- constant partition key to store the whole table on the same node
     W_ID        int,
     W_NAME      varchar,
     W_STREET_1  varchar,
@@ -17,7 +17,8 @@ CREATE TABLE warehouse (
     W_STATE     varchar,
     W_ZIP       varchar,
     W_TAX       decimal,
-    W_YTD       decimal
+    W_YTD       decimal,
+    PRIMARY KEY (W_CONST, W_ID)
 );
 COPY warehouse (W_CONST, W_ID, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_TAX, W_YTD)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/warehouse.csv'
@@ -25,13 +26,15 @@ WITH DELIMITER=',' AND HEADER=FALSE;
 
 DROP TABLE IF EXISTS warehouse_counters;
 CREATE TABLE warehouse_counters (
-    W_ID            int PRIMARY KEY,
-    W_YTD_CHANGE    counter
+    W_CONST         varchar,    -- constant partition key to store the whole table on the same node
+    W_ID            int,
+    W_YTD_CHANGE    counter,
+    PRIMARY KEY (W_CONST, W_ID)
 );
 
 DROP TABLE IF EXISTS district;
 CREATE TABLE district (
-    D_CONST     varchar,    # constant partition key to store the whole table on the same node
+    D_CONST     varchar,    -- constant partition key to store the whole table on the same node
     D_W_ID      int,
     D_ID        int,
     D_NAME      varchar,
@@ -51,11 +54,12 @@ WITH DELIMITER=',' AND HEADER=FALSE;
 
 DROP TABLE IF EXISTS district_counters;
 CREATE TABLE district_counters (
+    D_CONST         varchar,    -- constant partition key to store the whole table on the same node
     D_W_ID          int,
     D_ID            int,
     D_YTD_CHANGE    counter,    -- number of cents
     D_O_COUNTER     counter,
-    PRIMARY KEY (D_W_ID, D_ID)
+    PRIMARY KEY (D_CONST, D_W_ID, D_ID)
 );
 
 DROP TABLE IF EXISTS customer;
@@ -81,7 +85,7 @@ CREATE TABLE customer (
     C_PAYMENT_CNT   int,
     C_DELIVERY_CNT  int,
     C_DATA          varchar,
-    PRIMARY KEY ((C_W_ID, C_D_ID), C_BALANCE)  -- C_W_ID and C_D_ID is the partition key
+    PRIMARY KEY ((C_W_ID, C_D_ID), C_ID)  -- C_W_ID and C_D_ID is the partition key
 )
 WITH CLUSTERING ORDER BY (C_BALANCE DESC);
 COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
@@ -99,7 +103,7 @@ CREATE TABLE customer_counters (
     C_YTD_PAYMENT_CHANGE    counter,    -- number of cents
     C_PAYMENT_CNT_CHANGE    counter,
     C_DELIVERY_CNT_CHANGE   counter,
-    PRIMARY KEY (C_W_ID, C_D_ID, C_ID)
+    PRIMARY KEY ((C_W_ID, C_D_ID), C_ID)
 );
 
 DROP TABLE IF EXISTS orders;    -- `order' cannot be used as table's name in Cassandra

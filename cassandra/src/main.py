@@ -15,10 +15,10 @@ if __name__ == '__main__':
     # output = new_order(session, 1, 1, 1279, 2, item_number, supplier_warehouse, quantity)
     # print(output)
 
-    # output = payment(session, 1, 2, 186, 22378)
-    # print(output)
+    output = payment(session, 1, 2, 186, 22378)
+    print(output)
 
     # output = delivery(session, 1, 7)
 
-    output = order_status(session, 1, 2, 1081)
-    print(output)
+    # output = order_status(session, 1, 2, 1081)
+    # print(output)
