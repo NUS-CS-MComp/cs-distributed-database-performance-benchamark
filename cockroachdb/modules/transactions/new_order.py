@@ -255,8 +255,9 @@ class NewOrderTransaction(BaseTransaction):
         for index, item in enumerate(items):
             order_lines.append(
                 [
-                    str(index + 1),
+                    str(item["id"]),
                     item["name"],
+                    str(item["supplier_warehouse_id"]),
                     str(item["quantity"]),
                     str(item["order_line_amount"]),
                     str(item["stock"]),
@@ -264,8 +265,9 @@ class NewOrderTransaction(BaseTransaction):
             )
         self.print_table(
             columns=[
-                {"header": "Line #"},
+                {"header": "Item Id"},
                 {"header": "Item Name"},
+                {"header": "Supplier Warehouse"},
                 {"header": "Quantity"},
                 {"header": "Amount"},
                 {"header": "Stock"},
