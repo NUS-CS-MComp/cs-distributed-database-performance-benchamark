@@ -2,9 +2,10 @@
 from datetime import datetime
 from transactions import utils
 from transactions.utils import Constants
+from collections import Counter
 
 
-def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity):
+def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity, run_rc=True):
     # Step 1
     n = 0
     n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_CONST = %s AND D_W_ID = %s AND D_ID = %s',
@@ -88,6 +89,9 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     c_discount = utils.single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 
+    if run_rc:
+        populate_related_customers(session, w_id, d_id, c_id, item_number)
+
     # Output
     output = {}
     output['w_id'] = w_id
@@ -110,3 +114,19 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         i_name = utils.single_select(session, 'SELECT I_NAME FROM item WHERE I_ID = %s', (item_number[i],))
         output['item_infos'].append((item_number[i], i_name, supplier_warehouse[i], quantity[i], item_amount[i], adjusted_qty[i]))
     return output
+
+
+def populate_related_customers(session, w_id, d_id, c_id, item_number):
+    related_orders = session.execute('SELECT OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_D_ID != %s AND OL_I_ID IN %s ALLOW FILTERING', (w_id, d_id, tuple(item_number)))
+    counter = Counter([related_orders.OL_O_ID])
+    related_orders = [order for order in counter if counter[order] > 1]
+    related_customers = session.execute('SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE O_ID IN %s ALLOW FILTERING', (tuple(related_orders)))
+
+    query = "INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)"
+    prepared = session.prepare(query)
+    futures = []
+    for rc in related_customers:
+        futures.append(session.execute_async(prepared, (w_id, d_id, c_id, rc.O_W_ID, rc.O_D_ID, rc.O_C_ID)))
+        futures.append(session.execute_async(prepared, (rc.O_W_ID, rc.O_D_ID, rc.O_C_ID, w_id, d_id, c_id)))
+    for f in futures:
+        f.result()
