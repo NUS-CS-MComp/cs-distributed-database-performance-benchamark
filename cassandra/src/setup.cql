@@ -86,13 +86,19 @@ CREATE TABLE customer (
     C_DELIVERY_CNT  int,
     C_DATA          varchar,
     PRIMARY KEY ((C_W_ID, C_D_ID), C_ID)  -- C_W_ID and C_D_ID is the partition key
-)
-WITH CLUSTERING ORDER BY (C_BALANCE DESC);
+);
 COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
     C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_BALANCE, C_YTD_PAYMENT,
     C_PAYMENT_CNT, C_DELIVERY_CNT, C_DATA)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/customer.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
+
+CREATE MATERIALIZED VIEW customer_balances
+AS SELECT C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_BALANCE
+FROM customer
+WHERE C_W_ID IS NOT NULL AND C_D_ID IS NOT NULL AND C_ID IS NOT NULL
+PRIMARY KEY (C_ID)
+WITH CLUSTERING ORDER BY (C_BALANCE DESC);
 
 DROP TABLE IF EXISTS customer_counters;
 CREATE TABLE customer_counters (
@@ -187,4 +193,15 @@ CREATE TABLE stock_counters (
     S_ORDER_CNT_CHANGE  counter,
     S_REMOTE_CNT_CHANGE counter,
     PRIMARY KEY (S_W_ID, S_I_ID)
+);
+
+DROP TABLE IF EXISTS related_customers;
+CREATE TABLE related_customers (
+    C_ID              int,
+    C_W_ID            int,
+    C_D_ID            int,
+    R_ID              int,
+    R_W_ID            int,
+    R_D_ID            int,
+    PRIMARY KEY ((C_W_ID, C_D_ID, C_ID), R_ID)
 );
