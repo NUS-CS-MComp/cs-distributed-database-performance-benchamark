@@ -42,12 +42,12 @@ def popular_item(session, warehouse, district, limit):
     result = {'identifier': (warehouse, district), 'number': limit, 'orders': []}
     for order in orders:
         customer = customers_by_id[order.O_C_ID]
-        entry =  {'O_ID': order.O_ID,
-                  'O_ENTRY_D': order.O_ENTRY_D,
-                  'C_FIRST': customer.C_FIRST,
-                  'C_MIDDLE': customer.C_MIDDLE,
-                  'C_LAST': customer.C_LAST,
-                  'popular_items': [{'name': item_by_id[item_id].I_NAME, 'quantity': max}
+        entry = {'O_ID': order.O_ID,
+                 'O_ENTRY_D': order.O_ENTRY_D,
+                 'C_FIRST': customer.C_FIRST,
+                 'C_MIDDLE': customer.C_MIDDLE,
+                 'C_LAST': customer.C_LAST,
+                 'popular_items': [{'name': item_by_id[item_id].I_NAME, 'quantity': max}
                                     for ids, max in popular_items_by_order[order.O_ID]
                                     for item_id in ids]}
         result['orders'].append(entry)

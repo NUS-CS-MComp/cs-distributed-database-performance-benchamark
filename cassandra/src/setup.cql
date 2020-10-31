@@ -8,7 +8,6 @@ USE cs5424;
 
 DROP TABLE IF EXISTS warehouse;
 CREATE TABLE warehouse (
-    W_CONST     varchar,    -- constant partition key to store the whole table on the same node
     W_ID        int,
     W_NAME      varchar,
     W_STREET_1  varchar,
@@ -18,23 +17,21 @@ CREATE TABLE warehouse (
     W_ZIP       varchar,
     W_TAX       decimal,
     W_YTD       decimal,
-    PRIMARY KEY (W_CONST, W_ID)
+    PRIMARY KEY (W_ID)
 );
-COPY warehouse (W_CONST, W_ID, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_TAX, W_YTD)
+COPY warehouse (W_ID, W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_TAX, W_YTD)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/warehouse.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
 DROP TABLE IF EXISTS warehouse_counters;
 CREATE TABLE warehouse_counters (
-    W_CONST         varchar,    -- constant partition key to store the whole table on the same node
     W_ID            int,
     W_YTD_CHANGE    counter,
-    PRIMARY KEY (W_CONST, W_ID)
+    PRIMARY KEY (W_ID)
 );
 
 DROP TABLE IF EXISTS district;
 CREATE TABLE district (
-    D_CONST     varchar,    -- constant partition key to store the whole table on the same node
     D_W_ID      int,
     D_ID        int,
     D_NAME      varchar,
@@ -46,20 +43,19 @@ CREATE TABLE district (
     D_TAX       decimal,
     D_YTD       decimal,
     D_O_ID_OFST int,
-    PRIMARY KEY (D_CONST, D_W_ID, D_ID)  -- D_CONST is the partition key
+    PRIMARY KEY (D_W_ID, D_ID)  -- D_W_ID is the partition key
 );
-COPY district (D_CONST, D_W_ID, D_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX, D_YTD, D_O_ID_OFST)
+COPY district (D_W_ID, D_ID, D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX, D_YTD, D_O_ID_OFST)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/district.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
 DROP TABLE IF EXISTS district_counters;
 CREATE TABLE district_counters (
-    D_CONST         varchar,    -- constant partition key to store the whole table on the same node
     D_W_ID          int,
     D_ID            int,
     D_YTD_CHANGE    counter,    -- number of cents
     D_O_COUNTER     counter,
-    PRIMARY KEY (D_CONST, D_W_ID, D_ID)
+    PRIMARY KEY (D_W_ID, D_ID)
 );
 
 DROP TABLE IF EXISTS customer;
@@ -93,11 +89,46 @@ COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_ST
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/customer.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
+/* Table for the initial values of customer balance.
+   Copying all columns to avoid errors, but only C_BALANCE will ever be used,
+   and values in this table will never change.
+*/
+DROP TABLE IF EXISTS initial_balance;
+CREATE TABLE initial_balance (
+    C_W_ID          int,
+    C_D_ID          int,
+    C_ID            int,
+    C_FIRST         varchar,
+    C_MIDDLE        varchar,
+    C_LAST          varchar,
+    C_STREET_1      varchar,
+    C_STREET_2      varchar,
+    C_CITY          varchar,
+    C_STATE         varchar,
+    C_ZIP           varchar,
+    C_PHONE         varchar,
+    C_SINCE         timestamp,
+    C_CREDIT        varchar,
+    C_CREDIT_LIM    decimal,
+    C_DISCOUNT      decimal,
+    C_BALANCE       decimal,
+    C_YTD_PAYMENT   float,
+    C_PAYMENT_CNT   int,
+    C_DELIVERY_CNT  int,
+    C_DATA          varchar,
+    PRIMARY KEY ((C_W_ID, C_D_ID), C_ID)  -- C_W_ID and C_D_ID is the partition key
+);
+COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
+    C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_BALANCE, C_YTD_PAYMENT,
+    C_PAYMENT_CNT, C_DELIVERY_CNT, C_DATA)
+FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/customer.csv'
+WITH DELIMITER=',' AND HEADER=FALSE;
+
 CREATE MATERIALIZED VIEW customer_balances
 AS SELECT C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_BALANCE
 FROM customer
 WHERE C_W_ID IS NOT NULL AND C_D_ID IS NOT NULL AND C_ID IS NOT NULL
-PRIMARY KEY (C_ID)
+PRIMARY KEY (C_W_ID, C_D_ID, C_ID, C_BALANCE)
 WITH CLUSTERING ORDER BY (C_BALANCE DESC);
 
 DROP TABLE IF EXISTS customer_counters;

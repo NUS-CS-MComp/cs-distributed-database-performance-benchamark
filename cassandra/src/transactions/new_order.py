@@ -117,10 +117,12 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 
 
 def populate_related_customers(session, w_id, d_id, c_id, item_number):
-    related_orders = session.execute('SELECT OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_D_ID != %s AND OL_I_ID IN %s ALLOW FILTERING', (w_id, d_id, tuple(item_number)))
-    counter = Counter([related_orders.OL_O_ID])
+    related_orders = session.execute('SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_I_ID IN %s ALLOW FILTERING',
+                                     (w_id, tuple(item_number)))
+    counter = Counter([(order.OL_W_ID, order.OL_D_ID, order.OL_O_ID) for order in related_orders])
     related_orders = [order for order in counter if counter[order] > 1]
-    related_customers = session.execute('SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE O_ID IN %s ALLOW FILTERING', (tuple(related_orders)))
+    related_customers = session.execute('SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN %s ALLOW FILTERING',
+                                        (tuple(related_orders)))
 
     query = "INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)"
     prepared = session.prepare(query)
