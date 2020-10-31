@@ -92,15 +92,18 @@ class NewOrderTransaction(BaseTransaction):
         # Calculate amounts and update stock and order line records
         total_amount = Decimal("0.00")
         items_updated: List[NewOrderItemOutput] = []
+        order_lines: List[OrderLine] = []
         for index, item in enumerate(self.items):
             item_stock: Stock = Stock.get_by_id(
                 (self.warehouse_id, item["id"])
             )
             item_record: Item = Item.get_by_id(item["id"])
             adjusted_qty = self._update_stock(item_stock, item)
-            item_amount = self._create_new_order_line(
+            order_line = self._create_new_order_line(
                 order, index + 1, item, item_record
             )
+            order_lines.append(order_line)
+            item_amount = order_line.amount
             total_amount += item_amount
             items_updated.append(
                 {
@@ -110,6 +113,7 @@ class NewOrderTransaction(BaseTransaction):
                     "stock": adjusted_qty,
                 }
             )
+        OrderLine.bulk_create(order_lines)
 
         # Process execution output
         total_amount = (
@@ -190,22 +194,20 @@ class NewOrderTransaction(BaseTransaction):
         :param line_number: line number as index
         :param item: NewOrderItemInput dict item
         :param item_record: Item model instance
-        :return: calculated amount for specific item
+        :return: calculated order line for specific item
         """
-        amount = item["quantity"] * Decimal(item_record.price)
-        OrderLine.create(
+        return OrderLine(
             number=line_number,
             order_id=order.id,
             warehouse_id=self.warehouse_id,
             district_id=self.district_id,
             item_id=item["id"],
             delivery_date=None,
-            amount=amount,
+            amount=item["quantity"] * Decimal(item_record.price),
             supplying_warehouse_id=item["supplier_warehouse_id"],
             quantity=item["quantity"],
             dist_info=f"S_DIST_{self.district_id}",
         )
-        return amount
 
     def _output_result(
         self,
