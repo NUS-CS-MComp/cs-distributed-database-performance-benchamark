@@ -27,8 +27,8 @@ class BaseTransaction(ABC):
         def execute_transaction(_database):
             """
             Thunk to execute actual transaction
-            :param _database:
-            :return:
+            :param _database: database reference
+            :return: execution result
             """
             return self._execute(*args, **kwargs)
 

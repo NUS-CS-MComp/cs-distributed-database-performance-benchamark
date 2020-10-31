@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from typing import TypedDict, List
 
 from rich.console import Console
@@ -39,5 +40,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("rich")
-console = Console()
+console = Console(file=sys.stdout)
+error_console = Console(file=sys.stderr)
 OUTPUT_DIVIDER = "================================================================================"
