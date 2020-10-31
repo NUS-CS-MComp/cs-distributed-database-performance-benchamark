@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TypedDict, List, Tuple, Dict
 
-from peewee import fn, Case
+from peewee import fn, Case, Tuple as DBTuple
 
 from cockroachdb.modules.models import Customer, Item, Order, OrderLine
 from cockroachdb.modules.transactions.base import BaseTransaction
@@ -96,44 +96,71 @@ class PopularItemsTransaction(BaseTransaction):
             )
             .order_by(Order.entry_date.desc())
             .limit(self.orders_to_examine)
+            .cte("order_customer_query")
         )
 
         # Get order lines with maximum quantity, joined with item table
-        OrderLineSelfJoin: OrderLine = OrderLine.alias()
-        order_line_max_qty_query = OrderLineSelfJoin.select(
-            fn.MAX(OrderLineSelfJoin.quantity)
-        ).where(
-            (OrderLineSelfJoin.warehouse_id == OrderLine.warehouse_id)
-            & (OrderLineSelfJoin.district_id == OrderLine.district_id)
-            & (OrderLineSelfJoin.order_id == OrderLine.order_id)
+        OrderLineInner: OrderLine = OrderLine.alias()
+        order_line_sum_qty_query = (
+            OrderLineInner.select(
+                OrderLineInner.warehouse_id.alias("warehouse_id"),
+                OrderLineInner.district_id.alias("district_id"),
+                OrderLineInner.order_id.alias("order_id"),
+                fn.SUM(OrderLineInner.quantity).alias("sum_qty"),
+            )
+            .where(
+                (OrderLineInner.warehouse_id == self.warehouse_id)
+                & (OrderLineInner.district_id == self.district_id)
+            )
+            .group_by(
+                OrderLineInner.warehouse_id,
+                OrderLineInner.district_id,
+                OrderLineInner.order_id,
+                OrderLineInner.item_id,
+            )
+            .cte("order_line_sum_qty_query")
         )
+        order_line_max_qty_query = (
+            order_line_sum_qty_query.select(
+                order_line_sum_qty_query.c.order_id,
+                fn.MAX(order_line_sum_qty_query.c.sum_qty),
+            )
+            .group_by(
+                order_line_sum_qty_query.c.warehouse_id,
+                order_line_sum_qty_query.c.district_id,
+                order_line_sum_qty_query.c.order_id,
+            )
+            .with_cte(order_line_sum_qty_query)
+        )
+
+        customer_name_field = Case(
+            None,
+            (
+                (
+                    order_customer_query.c.middle_name.is_null(),
+                    fn.CONCAT(
+                        order_customer_query.c.first_name,
+                        " ",
+                        order_customer_query.c.last_name,
+                    ),
+                ),
+            ),
+            fn.CONCAT(
+                order_customer_query.c.first_name,
+                order_customer_query.c.middle_name,
+                order_customer_query.c.last_name,
+            ),
+        ).alias("customer_name")
+
         popular_items_query = (
             OrderLine.select(
                 order_customer_query.c.order_id,
                 order_customer_query.c.entry_date,
-                Case(
-                    None,
-                    (
-                        (
-                            order_customer_query.c.middle_name.is_null(),
-                            fn.CONCAT(
-                                order_customer_query.c.first_name,
-                                " ",
-                                order_customer_query.c.last_name,
-                            ),
-                        ),
-                    ),
-                    fn.CONCAT(
-                        order_customer_query.c.first_name,
-                        order_customer_query.c.middle_name,
-                        order_customer_query.c.last_name,
-                    ),
-                ).alias("customer_name"),
-                OrderLine.quantity,
+                customer_name_field,
+                fn.SUM(OrderLine.quantity).alias("quantity"),
                 Item.id.alias("item_id"),
                 Item.name.alias("item_name"),
             )
-            .join(Item, on=(OrderLine.item_id == Item.id))
             .join(
                 order_customer_query,
                 on=(
@@ -148,12 +175,24 @@ class PopularItemsTransaction(BaseTransaction):
                     & (OrderLine.order_id == order_customer_query.c.order_id)
                 ),
             )
-            .where(
-                (OrderLine.warehouse_id == self.warehouse_id)
-                & (OrderLine.district_id == self.district_id)
-                & (OrderLine.quantity.in_(order_line_max_qty_query))
+            .join(Item, on=(OrderLine.item_id == Item.id))
+            .group_by(
+                order_customer_query.c.order_id,
+                order_customer_query.c.entry_date,
+                customer_name_field,
+                Item.id,
+                Item.name,
             )
-            .order_by(order_customer_query.c.order_id.desc())
+            .having(
+                DBTuple(
+                    order_customer_query.c.order_id, fn.SUM(OrderLine.quantity)
+                ).in_(order_line_max_qty_query)
+            )
+            .order_by(
+                order_customer_query.c.order_id.desc(),
+                fn.SUM(OrderLine.quantity).desc(),
+            )
+            .with_cte(order_customer_query)
         )
 
         # Process query output
