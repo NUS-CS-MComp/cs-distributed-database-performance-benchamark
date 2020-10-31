@@ -12,7 +12,7 @@ function start_instances {
     done
   join_address=$(printf ",%s" "${node_addresses[@]}")
   join_address=${join_address:1}
-  ssh $USER@xcnc$1.comp.nus.edu.sg "cd /$FOLDER_NAME/cockroachdb; bin/cockroach start --certs-dir=certs --advertise-addr=xcnc$1.comp.nus.edu.sg:$PORT --join=$join_address --cache=.25 --max-sql-memory=.25 --background";
+  ssh $USER@xcnc$1.comp.nus.edu.sg "cd /$FOLDER_NAME/cockroachdb; bin/cockroach start --certs-dir=certs --listen-addr=xcnc$1.comp.nus.edu.sg:$PORT --advertise-addr=xcnc$1.comp.nus.edu.sg:$PORT --http-addr=xcnc$1.comp.nus.edu.sg:$HTTP_PORT --join=$join_address --cache=.25 --max-sql-memory=.25 --background";
 }
 
 for seq in $(seq $SERVER_SEQ_START $SERVER_SEQ_END);

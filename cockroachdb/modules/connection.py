@@ -1,6 +1,6 @@
 import os
 import pathlib
-from random import choice
+from random import choice, randint
 
 from playhouse.cockroachdb import PooledCockroachDatabase, DatabaseProxy
 
@@ -11,6 +11,7 @@ HOST = os.getenv("HOST", "localhost")
 USER = os.getenv("USERNAME", "root")
 ASSIGNED_PORTS = os.getenv("PORTS", "26257,26258,26259,26260,26261").split(",")
 SERVER_START_INDEX = 35
+NUM_SERVERS = 5
 
 # Connection options
 CONNECTION_KWARGS = {"database": DATABASE, "host": HOST, "user": USER}
@@ -30,8 +31,9 @@ def initialize_cockroach_database(
     """
     random_port = choice(ASSIGNED_PORTS)
     if IS_PROD:
-        SERVER = SERVER_START_INDEX + int(random_port) - 26257
+        SERVER = SERVER_START_INDEX + randint(0, NUM_SERVERS - 1)
         CONNECTION_KWARGS.update(
+            host=f"xcnc{SERVER}.comp.nus.edu.sg",
             sslmode="verify-full",
             sslrootcert=SCRIPTS_PATH / "prod/certs/ca.crt",
             sslcert=SCRIPTS_PATH / f"prod/certs_{SERVER}/client.{USER}.crt",
