@@ -9,6 +9,22 @@ class CockroachDBSingleClientHandler(BaseSingleClientHandler):
     CockroachDB client input handler
     """
 
+    def run_pre_transaction_hook(self):
+        """
+        Initiate new cockroach database connection
+        :return: None
+        """
+        from cockroachdb.modules.connection import (
+            database,
+            initialize_cockroach_database,
+        )
+
+        database.initialize(
+            initialize_cockroach_database(
+                server_idx=self.client_number % self.num_servers
+            )
+        )
+
     def run_transaction_from_input(self, transaction_type, transaction_inputs):
         """
         Method to run transaction from input

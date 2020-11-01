@@ -1,7 +1,11 @@
-from client.experiments.base import BaseExperiment
+from client.config import TRANSACTION_DATA_PATH
+from client.experiments import ExperimentHandlerFactory
 
 if __name__ == "__main__":
-    experiment = BaseExperiment(5)
-    experiment.perform_experiment()
-    clients = experiment.consolidate_results()
-    db_state = experiment.get_database_state()
+    Experiment = ExperimentHandlerFactory.generate_new_experiment(
+        ExperimentHandlerFactory.COCKROACH_DB
+    )
+    experiment = Experiment(
+        data_dir=TRANSACTION_DATA_PATH, experiment_number=5
+    )
+    experiment.run()

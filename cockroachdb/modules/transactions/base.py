@@ -3,7 +3,6 @@ from typing import List, Any
 
 from cockroachdb.modules.connection import (
     database,
-    initialize_cockroach_database,
 )
 from common.logging import (
     console,
@@ -32,7 +31,6 @@ class BaseTransaction(ABC):
             """
             return self._execute(*args, **kwargs)
 
-        database.initialize(initialize_cockroach_database())
         outputs = database.run_transaction(
             execute_transaction, max_attempts=BaseTransaction.MAX_ATTEMPTS
         )

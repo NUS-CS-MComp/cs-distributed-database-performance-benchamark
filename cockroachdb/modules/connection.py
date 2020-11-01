@@ -2,7 +2,7 @@ import os
 import pathlib
 from random import choice, randint
 
-from playhouse.cockroachdb import PooledCockroachDatabase, DatabaseProxy
+from playhouse.cockroachdb import CockroachDatabase, DatabaseProxy
 
 # Basic database configuration
 IS_PROD = os.getenv("ENV", "dev") == "prod"
@@ -19,19 +19,17 @@ SCRIPTS_PATH = pathlib.Path(__file__).parent.parent / "scripts"
 
 
 # Helper functions
-def initialize_cockroach_database(
-    pooling_size: int = None, stale_timeout: int = 600, timeout: int = 30
-):
+def initialize_cockroach_database(server_idx: int = None):
     """
     Initialize
-    :param pooling_size: connection pooling size
-    :param stale_timeout: time to keep connection alive
-    :param timeout: time to block connection
+    :param server_idx: server index to connect, only for production
     :return: Pooled CockroachDB instance
     """
-    random_port = choice(ASSIGNED_PORTS)
     if IS_PROD:
-        SERVER = SERVER_START_INDEX + randint(0, NUM_SERVERS - 1)
+        if server_idx is None:
+            SERVER = SERVER_START_INDEX + randint(0, NUM_SERVERS - 1)
+        else:
+            SERVER = SERVER_START_INDEX + server_idx
         CONNECTION_KWARGS.update(
             host=f"xcnc{SERVER}.comp.nus.edu.sg",
             sslmode="verify-full",
@@ -46,11 +44,8 @@ def initialize_cockroach_database(
             sslcert=SCRIPTS_PATH / "dev/certs/client.root.crt",
             sslkey=SCRIPTS_PATH / "dev/certs/client.root.key",
         )
-    return PooledCockroachDatabase(
-        port=random_port,
-        max_connections=pooling_size,
-        timeout=timeout,
-        stale_timeout=stale_timeout,
+    return CockroachDatabase(
+        port=choice(ASSIGNED_PORTS),
         **CONNECTION_KWARGS,
     )
 

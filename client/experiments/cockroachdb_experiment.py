@@ -19,23 +19,55 @@ class CockroachDBExperiment(BaseExperiment):
     CockroachDB transaction experiment runner class
     """
 
+    def run_pre_experiment_hook(self):
+        """
+        Run pre-experiment hook by initiating a database connection for state retrieval
+        :return: None
+        """
+        from cockroachdb.modules.connection import (
+            database,
+            initialize_cockroach_database,
+        )
+
+        database.initialize(initialize_cockroach_database())
+
     @property
     def experiment_configurations(self):
-        configurations = {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}
-        return configurations.get(self.experiment_number)
+        """
+        CockroachDB experiment related configurations
+        :return: selected configuration given experiment number
+        """
+        from client.config import IS_PROD
 
-    def perform_experiment(self):
+        configurations = (
+            {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}
+            if IS_PROD
+            else {5: (5, 5)}
+        )
+        return configurations.get(self.experiment_number, (5, 5))
+
+    def run_experiment(self):
+        """
+        Run multiple processes handling client transactions using client handlers
+        :return: None
+        """
+
         configurations = self.experiment_configurations
         num_of_clients, num_of_servers = configurations
 
         Client = SingleClientHandlerFactory.generate_new_client(
             SingleClientHandlerFactory.COCKROACH_DB
         )
-        self.clients = [Client(index + 1) for index in range(num_of_clients)]
+        self.clients = [
+            Client(
+                client_number=index + 1,
+                num_servers=num_of_servers,
+                data_dir=self.data_dir,
+            )
+            for index in range(num_of_clients)
+        ]
 
-        # TODO: Change to distributed client transactions in different servers concurrently
-        for client in self.clients:
-            client.process_client_transactions()
+        self.process_multiple_clients(workers=num_of_clients)
 
     def get_database_state(self):
         """
@@ -72,14 +104,14 @@ class CockroachDBExperiment(BaseExperiment):
             fn.SUM(Stock.remote_count),
         ).scalar(as_tuple=True)
 
-        summary = (
-            (self.experiment_number,)
-            + sum_warehouse
-            + sum_district
-            + sum_customer
-            + sum_order
-            + sum_order_line
-            + sum_stock
-        )
-
-        return summary
+        return [
+            (
+                (self.experiment_number,)
+                + sum_warehouse
+                + sum_district
+                + sum_customer
+                + sum_order
+                + sum_order_line
+                + sum_stock
+            ),
+        ]

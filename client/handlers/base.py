@@ -16,15 +16,18 @@ class BaseSingleClientHandler(ABC):
 
     def __init__(
         self,
-        data_dir: pathlib.Path,
         client_number: int,
+        num_servers: int,
+        data_dir: pathlib.Path,
     ):
         """
         Initiate a new client handler
-        :param data_dir: input data directory
         :param client_number: number of clients for running transactions
+        :param data_dir: input data directory
+        :param num_servers
         """
         self.client_number = client_number
+        self.num_servers = num_servers
         self.client_input_file = data_dir / f"{self.client_number}.txt"
         self.num_of_transactions = 0
         self.elapsed_time = 0
@@ -47,10 +50,19 @@ class BaseSingleClientHandler(ABC):
         """
         return NotImplemented
 
+    @abstractmethod
+    def run_pre_transaction_hook(self):
+        """
+        Abstract method to run preparation work before running transactions
+        :return: NotImplemented object
+        """
+        return NotImplemented
+
     def process_client_transactions(self):
         """
         Process client transactions
         """
+        self.run_pre_transaction_hook()
         _output, self.elapsed_time = time_execution(
             self._read_and_execute_transactions
         )()
@@ -99,8 +111,9 @@ class BaseSingleClientHandler(ABC):
             while True:
                 try:
                     line = input_file_ref.readline()
-                    if not line:  # EOF
+                    if not line:
                         break
+                    line = line.strip()
                     transaction_type = line[0]
                     if transaction_type not in ["N"]:
                         transaction_inputs = line.split(",")[1:]

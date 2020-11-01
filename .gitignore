@@ -1,3 +1,4 @@
+client/experiments/outputs
 cassandra/project-files/
 cockroachdb/scripts/bin
 cockroachdb/scripts/dev/node*

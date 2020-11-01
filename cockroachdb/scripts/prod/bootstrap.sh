@@ -19,3 +19,5 @@ for seq in $(seq $SERVER_SEQ_START $SERVER_SEQ_END);
   do
     start_instances $seq
   done
+
+cockroach init --certs-dir=certs_$SERVER_SEQ_START --host=xcnc$SERVER_SEQ_START.comp.nus.edu.sg:$PORT

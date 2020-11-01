@@ -1,9 +1,12 @@
+from typing import Literal
+
+
 class SingleClientHandlerFactory:
     COCKROACH_DB = "cockroach"
     CASSANDRA = "cassandra"
 
     @staticmethod
-    def generate_new_client(db_name: str):
+    def generate_new_client(db_name: Literal["cockroach", "cassandra"]):
         """
         Factory method to return a new client for
         :param db_name: DB name to generate new client

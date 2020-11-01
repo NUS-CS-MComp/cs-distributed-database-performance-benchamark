@@ -20,6 +20,12 @@ def run(transaction: BaseTransaction):
     :param transaction: transaction object
     :return: None
     """
+    from cockroachdb.modules.connection import (
+        database,
+        initialize_cockroach_database,
+    )
+
+    database.initialize(initialize_cockroach_database())
     transaction.run()
 
 
