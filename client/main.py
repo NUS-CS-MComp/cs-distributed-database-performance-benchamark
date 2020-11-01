@@ -16,6 +16,19 @@ def main():
     parser.add_argument(
         "-l", "--load", help="Load data into database", action="store_true"
     )
+    parser.add_argument(
+        "-w",
+        "--workers",
+        help="Number of processes to load data",
+        type=int,
+        default=4,
+    )
+    parser.add_argument(
+        "--batch-size",
+        help="Batch size of loading data",
+        type=int,
+        default=999,
+    )
 
     parser.add_argument(
         "-e", "--experiment", help="Run experiment", action="store_true"
@@ -58,7 +71,7 @@ def main():
         return
 
     if args.load:
-        load_data(database, args.load_data_path)
+        load_data(database, args.load_data_path, args.workers, args.batch_size)
     elif args.experiment:
         run_experiment(
             database, args.experiment_number, args.transaction_data_path
@@ -66,12 +79,17 @@ def main():
 
 
 def load_data(
-    database: Literal["cassandra", "cockroachdb"], data_path: pathlib.Path
+    database: Literal["cassandra", "cockroachdb"],
+    data_path: pathlib.Path,
+    workers: int,
+    batch_size: int,
 ):
     """
     Load data into database
     :param database: database name
     :param data_path: data path to read
+    :param workers: number of workers for loading
+    :param batch_size: batch loading size
     :return: None
     """
     if database == "cockroachdb":
@@ -82,6 +100,8 @@ def load_data(
         loader = CockroachDBCSVLoader(
             data_dir=INIT_DATA_PATH if data_path is None else data_path,
             file_names=FILE_NAMES,
+            workers=workers,
+            batch_size=batch_size,
         )
         loader.run()
 

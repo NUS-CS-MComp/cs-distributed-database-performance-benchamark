@@ -34,6 +34,7 @@ class CockroachDBCSVLoader(CSVLoader):
         data_dir: pathlib.Path,
         file_names: List[str],
         file_name_model_mapping: Dict[str, ModelMapping] = None,
+        **kwargs,
     ):
         """
         Initiate a new csv loader class for Cockroach DB
@@ -41,7 +42,7 @@ class CockroachDBCSVLoader(CSVLoader):
         :param file_names: file names to parse as csv object
         :param file_name_model_mapping: file name to model mapping
         """
-        super().__init__(data_dir=data_dir, file_names=file_names)
+        super().__init__(data_dir=data_dir, file_names=file_names, **kwargs)
         if file_name_model_mapping is None:
             file_name_model_mapping = CockroachDBCSVLoader.MODEL_MAPPING
         self.file_name_model_mapping = file_name_model_mapping
