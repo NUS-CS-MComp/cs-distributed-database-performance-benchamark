@@ -14,7 +14,7 @@ from common.logging import (
 
 
 class BaseTransaction(ABC):
-    MAX_ATTEMPTS = 40
+    MAX_ATTEMPTS = 10
 
     def __init__(self):
         """

@@ -37,14 +37,13 @@ class CockroachDBExperiment(BaseExperiment):
         CockroachDB experiment related configurations
         :return: selected configuration given experiment number
         """
-        from client.config import IS_PROD
 
-        configurations = (
-            {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}
-            if IS_PROD
-            else {5: (5, 5)}
-        )
-        return configurations.get(self.experiment_number, (5, 5))
+        configurations = {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}
+        if self.experiment_number not in configurations:
+            raise NotImplementedError(
+                f"No such experiment number: {self.experiment_number}"
+            )
+        return configurations.get(self.experiment_number)
 
     def run_experiment(self):
         """
