@@ -13,8 +13,6 @@ def order_status(session, c_w_id, c_d_id, c_id):
         output['c_last'] = row.c_last
         output['c_balance'] = row.c_balance
         break
-    c_balance_change = utils.single_select(session, 'SELECT C_BALANCE_CHANGE FROM customer_counters WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (c_w_id, c_d_id, c_id))
-    output['c_balance'] += Decimal(c_balance_change) / Decimal(100)
 
     rows = session.execute('SELECT O_ID, O_ENTRY_D, O_CARRIER_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s LIMIT 1', (c_w_id, c_d_id))  # max O_ID
     for row in rows:

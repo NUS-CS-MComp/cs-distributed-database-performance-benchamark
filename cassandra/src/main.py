@@ -20,7 +20,7 @@ if __name__ == '__main__':
     nTX = 0
     l = 0
     # while (l < nlines):
-    while (l < 10):
+    while (l < 200):
         req = input_data[l]
         args = req.split(",")
         start_time = time.time()

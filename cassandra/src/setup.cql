@@ -58,6 +58,7 @@ CREATE TABLE district_counters (
     PRIMARY KEY (D_W_ID, D_ID)
 );
 
+DROP MATERIALIZED VIEW IF EXISTS customer_balances;     -- cannot drop `customer` table with existing depending materialized views
 DROP TABLE IF EXISTS customer;
 CREATE TABLE customer (
     C_W_ID          int,
@@ -93,8 +94,8 @@ WITH DELIMITER=',' AND HEADER=FALSE;
    Copying all columns to avoid errors, but only C_BALANCE will ever be used,
    and values in this table will never change.
 */
-DROP TABLE IF EXISTS initial_balance;
-CREATE TABLE initial_balance (
+DROP TABLE IF EXISTS customer_initial;
+CREATE TABLE customer_initial (
     C_W_ID          int,
     C_D_ID          int,
     C_ID            int,
@@ -118,16 +119,17 @@ CREATE TABLE initial_balance (
     C_DATA          varchar,
     PRIMARY KEY ((C_W_ID, C_D_ID), C_ID)  -- C_W_ID and C_D_ID is the partition key
 );
-COPY customer (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
+COPY customer_initial (C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
     C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_BALANCE, C_YTD_PAYMENT,
     C_PAYMENT_CNT, C_DELIVERY_CNT, C_DATA)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/customer.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
+DROP MATERIALIZED VIEW IF EXISTS customer_balances;
 CREATE MATERIALIZED VIEW customer_balances
 AS SELECT C_W_ID, C_D_ID, C_ID, C_FIRST, C_MIDDLE, C_LAST, C_BALANCE
 FROM customer
-WHERE C_W_ID IS NOT NULL AND C_D_ID IS NOT NULL AND C_ID IS NOT NULL
+WHERE C_W_ID IS NOT NULL AND C_D_ID IS NOT NULL AND C_ID IS NOT NULL AND C_BALANCE IS NOT NULL
 PRIMARY KEY (C_W_ID, C_D_ID, C_ID, C_BALANCE)
 WITH CLUSTERING ORDER BY (C_BALANCE DESC);
 
