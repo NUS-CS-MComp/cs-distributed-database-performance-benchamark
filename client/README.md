@@ -27,14 +27,14 @@ python -m client.main -h
 
 ```bash
 # Load data into CockroachDB
-ENV=prod PORTS=26262 python -m client.main -l --cockroachdb --workers 16 --batch-size 2999
+NUM_SERVERS=4 ENV=prod PORTS=26262 python -m client.main -l --cockroachdb --workers 16 --batch-size 2999
 ```
 
 ### Run Experiment with Specified Number
 
 ```bash
 # Run experiment no.5 on CockroachDB
-ENV=prod PORTS=26262 python -m client.main -e --cockroachdb -n 5
+NUM_SERVERS=4 ENV=prod PORTS=26262 python -m client.main -e --cockroachdb -n 5
 ```
 
 > Caveat: initial database setup should be done differently to handle different node sizes
