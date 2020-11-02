@@ -6,7 +6,7 @@ from transactions import utils
 
 def delivery(session, w_id, carrier_id):
     for district_no in range(1, 11):
-        rows = session.execute(
+        rows = utils.do_query(session, 
             '''
             SELECT MIN(O_ID), O_C_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_CARRIER_ID = 'null' ALLOW FILTERING
             ''',
@@ -16,7 +16,7 @@ def delivery(session, w_id, carrier_id):
         for row in rows:
             n = row[0]; c = row[1]
             break
-        session.execute(
+        utils.do_query(session, 
             '''
             UPDATE orders SET O_CARRIER_ID = '%s'
             WHERE O_W_ID = %s AND O_D_ID = %s AND O_ID = %s
@@ -27,7 +27,7 @@ def delivery(session, w_id, carrier_id):
         current_datetime_str = current_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')
         ol_cnt = utils.single_select(session, 'SELECT O_OL_CNT FROM orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_ID = %s', (w_id, district_no, n))
         for i in range(1, ol_cnt+1):
-            session.execute(
+            utils.do_query(session, 
                 '''
                 UPDATE order_line
                 SET OL_DELIVERY_D = %s
@@ -42,7 +42,7 @@ def delivery(session, w_id, carrier_id):
             ''',
             (w_id, district_no, n)
         )
-        session.execute(
+        utils.do_query(session, 
             '''
             UPDATE customer_counters
             SET C_BALANCE_CHANGE = C_BALANCE_CHANGE + %s,
@@ -54,5 +54,5 @@ def delivery(session, w_id, carrier_id):
         balance = utils.single_select(session, 'SELECT C_BALANCE FROM customer_initial WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, district_no, c))
         balance += Decimal(utils.single_select(session, 'SELECT C_BALANCE_CHANGE FROM customer_counters WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s',
             (w_id, district_no, c))) / Decimal(100)
-        session.execute('UPDATE customer SET C_BALANCE = %s WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (balance, w_id, district_no, c))
+        utils.do_query(session, 'UPDATE customer SET C_BALANCE = %s WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (balance, w_id, district_no, c))
     return None

@@ -6,7 +6,7 @@ from decimal import Decimal
 def order_status(session, c_w_id, c_d_id, c_id):
     output = {}
 
-    rows = session.execute('SELECT C_FIRST, C_MIDDLE, C_LAST, C_BALANCE FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (c_w_id, c_d_id, c_id))
+    rows = utils.do_query(session, 'SELECT C_FIRST, C_MIDDLE, C_LAST, C_BALANCE FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (c_w_id, c_d_id, c_id))
     for row in rows:
         output['c_first'] = row.c_first
         output['c_middle'] = row.c_middle
@@ -14,7 +14,7 @@ def order_status(session, c_w_id, c_d_id, c_id):
         output['c_balance'] = row.c_balance
         break
 
-    rows = session.execute('SELECT O_ID, O_ENTRY_D, O_CARRIER_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s LIMIT 1', (c_w_id, c_d_id))  # max O_ID
+    rows = utils.do_query(session, 'SELECT O_ID, O_ENTRY_D, O_CARRIER_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s LIMIT 1', (c_w_id, c_d_id))  # max O_ID
     for row in rows:
         output['o_id'] = row[0]
         output['o_entry_d'] = row.o_entry_d
@@ -22,7 +22,7 @@ def order_status(session, c_w_id, c_d_id, c_id):
         break
 
     o_id = output['o_id']
-    rows = session.execute(
+    rows = utils.do_query(session, 
         '''
         SELECT OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DELIVERY_D
         FROM order_line

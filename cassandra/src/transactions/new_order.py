@@ -11,7 +11,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     n += utils.single_select(session, 'SELECT D_O_COUNTER from district_counters WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
 
     # Step 2
-    session.execute('UPDATE district_counters SET D_O_COUNTER = D_O_COUNTER + 1 WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
+    utils.do_query(session, 'UPDATE district_counters SET D_O_COUNTER = D_O_COUNTER + 1 WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
 
     # Step 3
     all_local = 1
@@ -20,7 +20,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
             all_local = 0
             break
     current_datetime = datetime.now()
-    session.execute(
+    utils.do_query(session, 
         '''
         INSERT INTO orders (O_ID, O_D_ID, O_W_ID, O_C_ID, O_ENTRY_D, O_CARRIER_ID, O_OL_CNT, O_ALL_LOCAL)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -42,9 +42,9 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         if adjusted_qty[i] < 10:
             adjusted_qty[i] += 100
         # Step 5d
-        session.execute('UPDATE stock SET S_QUANTITY = %s WHERE S_W_ID = %s AND S_I_ID = %s',
+        utils.do_query(session, 'UPDATE stock SET S_QUANTITY = %s WHERE S_W_ID = %s AND S_I_ID = %s',
             (adjusted_qty[i], supplier_warehouse[i], item_number[i]))
-        session.execute(
+        utils.do_query(session, 
             '''
             UPDATE stock_counters
             SET S_YTD_CHANGE = S_YTD_CHANGE + %s,
@@ -54,7 +54,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
             (quantity[i], supplier_warehouse[i], item_number[i])
         )
         if supplier_warehouse[i] != w_id:
-            session.execute(
+            utils.do_query(session, 
                 '''
                 UPDATE stock_counters SET S_REMOTE_CNT_CHANGE = S_REMOTE_CNT_CHANGE + 1
                 WHERE S_W_ID = %s AND S_I_ID = %s
@@ -69,7 +69,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         # Step 5g
         dist_name = 'S_DIST_' + str(d_id)
         dist_info = utils.single_select(session, 'SELECT {} FROM stock WHERE S_W_ID = {} AND S_I_ID = {}'.format(dist_name, supplier_warehouse[i], item_number[i]))
-        session.execute(
+        utils.do_query(session, 
             '''
             INSERT INTO order_line (OL_O_ID, OL_D_ID, OL_W_ID, OL_NUMBER, OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DIST_INFO)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -91,7 +91,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     output['w_id'] = w_id
     output['d_id'] = d_id
     output['c_id'] = c_id
-    rows = session.execute('SELECT C_LAST, C_CREDIT, C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
+    rows = utils.do_query(session, 'SELECT C_LAST, C_CREDIT, C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     for row in rows:
         output['c_last'] = row.c_last
         output['c_credit'] = row.c_credit
@@ -111,11 +111,11 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 
 
 def populate_related_customers(session, w_id, d_id, c_id, item_number):
-    related_orders = session.execute('SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_I_ID IN %s ALLOW FILTERING',
+    related_orders = utils.do_query(session, 'SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_I_ID IN %s ALLOW FILTERING',
                                      (w_id, tuple(item_number)))
     counter = Counter([(order.OL_W_ID, order.OL_D_ID, order.OL_O_ID) for order in related_orders])
     related_orders = [order for order in counter if counter[order] > 1]
-    related_customers = session.execute('SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN %s ALLOW FILTERING',
+    related_customers = utils.do_query(session, 'SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN %s ALLOW FILTERING',
                                         (tuple(related_orders)))
 
     query = "INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)"

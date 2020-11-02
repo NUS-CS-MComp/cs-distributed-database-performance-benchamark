@@ -2,7 +2,8 @@ import sys
 import time
 import pandas as pd
 from decimal import Decimal
-from cassandra.cluster import Cluster
+from cassandra import ConsistencyLevel
+from cassandra.cluster import Cluster, ExecutionProfile
 from transactions.new_order import *
 from transactions.payment import *
 from transactions.delivery import *
@@ -10,7 +11,21 @@ from transactions.order_status import *
 
 
 if __name__ == '__main__':
-    cluster = Cluster(['127.0.0.1'], port=6042)
+    exec_profile = {}
+    if len(sys.argv) < 2:
+        sys.exit('Args required!')
+    if sys.argv[1] == 'ROWA':
+        read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.ONE)
+        write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.ALL)
+        exec_profile = {'read': read_profile, 'write': write_profile}
+    elif sys.argv[1] == 'QUORUM':
+        read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
+        write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
+        exec_profile = {'read': read_profile, 'write': write_profile}
+    else:
+        sys.exit('Argument not valid! (consistency level required)')
+
+    cluster = Cluster(['127.0.0.1'], port=6042, execution_profiles=exec_profile)
     session = cluster.connect('cs5424')
 
     input_data = sys.stdin.readlines()
