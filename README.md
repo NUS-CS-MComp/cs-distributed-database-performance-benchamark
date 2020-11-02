@@ -1,3 +1,20 @@
 # Distributed Database: Performance Benchmarking
 
-Group project repository for CS5424 Distributed Database.
+### Group O's project repository for CS5424 Distributed Database.
+
+
+This documentation serves as a general guide for the project structure
+---
+
+
+## Project Structure
+- client: handle the experiment and client transactions, to be shared by both implementations
+- cockroachdb: model and transactions for cockroachdb implementation
+- cassandra: transactions for cockroach implementation
+- common: common utilities for both implementations
+
+
+
+
+
+
