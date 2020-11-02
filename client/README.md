@@ -1,5 +1,25 @@
 # Client Handler
 
+## Overview
+This module serves as the handler for experiment, which initiates database, loads initial data, performs client transactions and provides measurements at transaction and database level.
+
+## Module Structure
+* main.py
+    * handle an experiment by:
+        * load the initial data to database given database name, number of servers (cockroach specific argument), number of workers and batch size
+        * run the experiment given experiment number 
+        * output transaction measurements, transaction summary and database status at the end of the experiment
+* experiments: 
+    * experiment handler for both database implementations
+    * interact with client handlers to perform client transactions 
+    * output transaction measurements and database status 
+* handlers
+    * interact with transaction methods to perform client transactions
+    * output transaction measurements 
+* loaders
+    * load initial data to databases upon start of the experiment
+
+
 ## Usage Examples for CockroachDB
 
 ### Load Database Schema and Reset Tables
