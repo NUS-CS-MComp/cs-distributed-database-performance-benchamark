@@ -83,6 +83,10 @@ class TopBalanceTransaction(BaseTransaction):
         :param top_balance_customers
         :return: None
         """
+        self.print(
+            "Customers Ranked by Top Balance:",
+            is_heading=True,
+        )
         customers = []
         for item in top_balance_customers:
             customers.append(
