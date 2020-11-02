@@ -11,7 +11,7 @@ HOST = os.getenv("HOST", "localhost")
 USER = os.getenv("USERNAME", "root")
 ASSIGNED_PORTS = os.getenv("PORTS", "26257,26258,26259,26260,26261").split(",")
 SERVER_START_INDEX = 35
-NUM_SERVERS = 5
+NUM_SERVERS = int(os.getenv("NUM_SERVERS", 5))
 
 # Connection options
 CONNECTION_KWARGS = {"database": DATABASE, "host": HOST, "user": USER}
