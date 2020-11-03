@@ -10,5 +10,8 @@ def single_select(session, query, data=None, default=0):
     # rows = session.execute(query, data)
     rows = do_query(session, query, data)
     for row in rows:
-        return row[0]
+        if row[0] != None:
+            return row[0]
+        else:
+            return default
     return default
