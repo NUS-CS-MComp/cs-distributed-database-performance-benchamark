@@ -40,7 +40,7 @@ if __name__ == '__main__':
     l = 0
     # while (l < nlines):
     while (l < 200):
-        req = input_data[l]
+        req = input_data[l].rstrip()
         args = req.split(",")
         start_time = time.time()
         if args[0] == "N":

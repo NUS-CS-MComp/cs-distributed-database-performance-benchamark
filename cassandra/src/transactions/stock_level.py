@@ -8,5 +8,5 @@ def stock_level(session, warehouse, district, threshold, limit):
                      'WHERE S_W_ID = {w} AND S_I_ID IN {i} ALLOW FILTERING'
     orders = [order[0] for order in session.execute(cql_get_orders.format(w=warehouse, d=district, l=limit))]
     items = set([item[0] for item in session.execute(cql_get_items.format(w=warehouse, d=district, o=tuple(orders)))])
-    stocks = [1 for stock in session.execute(cql_get_stocks.format(w=warehouse, i=tuple(items))) if stock[0] < threshold]
+    stocks = [1 for stock in session.execute(cql_get_stocks.format(w=warehouse, i=tuple(items))) if int(stock[0]) < int(threshold)]
     return len(stocks)
