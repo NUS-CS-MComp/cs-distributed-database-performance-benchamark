@@ -15,3 +15,9 @@ def single_select(session, query, data=None, default=0):
         else:
             return default
     return default
+
+def get_tuple(t):
+    if len(t) == 1:
+        return str(t).replace(',' '')
+    else:
+        return str(t)
