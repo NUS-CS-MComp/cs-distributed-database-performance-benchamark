@@ -4,5 +4,5 @@ XACT_FILE_DIR="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/c
 
 for i in {3..20..5}
 do
-    python3 ${SCRIPT_PATH} < ${XACT_FILE_DIR}$i.txt &
+    python3 ${SCRIPT_PATH} QUORUM < ${XACT_FILE_DIR}$i.txt &
 done
