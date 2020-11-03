@@ -8,6 +8,10 @@ from transactions.new_order import *
 from transactions.payment import *
 from transactions.delivery import *
 from transactions.order_status import *
+from transactions.stock_level import *
+from transactions.popular_item import *
+from transactions.top_balance import *
+from transactions.related_customer import *
 
 
 if __name__ == '__main__':
@@ -52,7 +56,6 @@ if __name__ == '__main__':
                 supplier_warehouse.append(int(args[1]))
                 quantity.append(int(args[2]))
             output = new_order(session, w_id, d_id, c_id, m, item_number, supplier_warehouse, quantity)
-            print(output)
             l += m
         elif args[0] == "P":
             c_w_id = int(args[1])
@@ -60,17 +63,26 @@ if __name__ == '__main__':
             c_id = int(args[3])
             amount = Decimal(args[4])
             output = payment(session, c_w_id, c_d_id, c_id, amount)
-            print(output)
         elif args[0] == "D":
             w_id = int(args[1])
             carrier_id = int(args[2])
-            delivery(session, w_id, carrier_id)
+            output = delivery(session, w_id, carrier_id)
         elif args[0] == "O":
             c_w_id = int(args[1])
             c_d_id = int(args[2])
             c_id = int(args[3])
             output = order_status(session, c_w_id, c_d_id, c_id)
-            print(output)
+        elif args[0] == "S":
+            output = stock_level(session, *args[1:])
+        elif args[0] == "I":
+            output = popular_item(session, *args[1:])
+        elif args[0] == "T":
+            output = top_balance(session)
+        elif args[0] == "R":
+            output = related_customer(session, *args[1:])
+        else:
+            raise Exception("Invalid transaction type: %s" % args[0])
+        print(output)
         latency.append(time.time() - start_time)
         nTX += 1
         l += 1
