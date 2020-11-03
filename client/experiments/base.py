@@ -46,7 +46,7 @@ class BaseExperiment(ABC):
 
     def process_multiple_clients(self, workers: int):
         """
-        Trigger multiprocessing for parallel transactions
+        Trigger multiprocessing for parallel processes to process client transactions
         :param workers: number of workers
         :return: None
         """

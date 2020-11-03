@@ -2,7 +2,7 @@ from cockroachdb.modules.connection import (
     initialize_cockroach_database,
     database,
 )
-from common.logging import console
+from common.logging_tool import console
 
 if __name__ == "__main__":
     cockroach_db = initialize_cockroach_database()

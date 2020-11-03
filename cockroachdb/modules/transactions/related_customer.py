@@ -1,6 +1,8 @@
 from typing import Tuple, TypedDict, List
 
-from cockroachdb.modules.models import Customer, Order, OrderLine
+from peewee import Tuple as DBTuple
+
+from cockroachdb.modules.models import Order, OrderLine
 from cockroachdb.modules.transactions.base import BaseTransaction
 
 
@@ -66,145 +68,129 @@ class RelatedCustomerTransaction(BaseTransaction):
                     & (customer_orders.c.id == OrderLine.order_id)
                 ),
             )
+        ).cte("customer_order_lines")
+
+        # Sort out order line pairs from current customer
+        customer_order_line_self_join = customer_order_lines.alias(
+            "customer_order_lines_self_join"
+        )
+        customer_order_line_item_pairs = (
+            customer_order_lines.select_from(
+                customer_order_lines.c.item_id.alias("col_i_id_1"),
+                customer_order_line_self_join.c.item_id.alias("col_i_id_2"),
+            )
+            .join(
+                customer_order_line_self_join,
+                on=(
+                    (
+                        customer_order_lines.c.warehouse_id
+                        == customer_order_line_self_join.c.warehouse_id
+                    )
+                    & (
+                        customer_order_lines.c.district_id
+                        == customer_order_line_self_join.c.district_id
+                    )
+                    & (
+                        customer_order_lines.c.order_id
+                        == customer_order_line_self_join.c.order_id
+                    )
+                ),
+            )
+            .where(
+                customer_order_lines.c.item_id
+                < customer_order_line_self_join.c.item_id
+            )
+            .cte("customer_order_line_item_pairs")
         )
 
-        # Get distinct order lines from other customers
-        other_customers = Customer.select(
-            Customer.warehouse_id.alias("warehouse_id"),
-            Customer.district_id.alias("district_id"),
-            Customer.id.alias("id"),
-        ).where(Customer.warehouse_id != self.warehouse_id)
-        other_orders = Order.select(
-            Order.warehouse_id.alias("warehouse_id"),
-            Order.district_id.alias("district_id"),
-            Order.id.alias("id"),
-            other_customers.c.id.alias("customer_id"),
-        ).join(
-            other_customers,
-            on=(
-                (other_customers.c.warehouse_id == Order.warehouse_id)
-                & (other_customers.c.district_id == Order.district_id)
-                & (other_customers.c.id == Order.customer_id)
-            ),
-        )
-        other_order_lines = (
+        # Get order lines from other customers containing same items
+        other_order_line_with_same_item = (
             OrderLine.select(
                 OrderLine.item_id.alias("item_id"),
                 OrderLine.warehouse_id.alias("warehouse_id"),
                 OrderLine.district_id.alias("district_id"),
                 OrderLine.order_id.alias("order_id"),
-                other_orders.c.customer_id.alias("customer_id"),
             )
             .distinct()
-            .join(
-                other_orders,
-                on=(
-                    (other_orders.c.warehouse_id == OrderLine.warehouse_id)
-                    & (other_orders.c.district_id == OrderLine.district_id)
-                    & (other_orders.c.id == OrderLine.order_id)
-                ),
-            )
-        )
-
-        # Sort out order line pairs from both tables
-        customer_ol_cte = customer_order_lines.cte("customer_order_lines")
-        customer_ol_cte_self_join = customer_ol_cte.alias(
-            "customer_order_lines_self_join"
-        )
-        other_ol_cte = other_order_lines.cte("other_order_lines")
-        other_ol_cte_self_join = other_ol_cte.alias(
-            "other_order_lines_self_join"
-        )
-
-        customer_ol_pairs = (
-            customer_ol_cte.select_from(
-                customer_ol_cte.c.item_id.alias("col_i_id_1"),
-                customer_ol_cte_self_join.c.item_id.alias("col_i_id_2"),
-                customer_ol_cte.c.warehouse_id,
-                customer_ol_cte.c.district_id,
-                customer_ol_cte.c.order_id,
-            )
-            .join(
-                customer_ol_cte_self_join,
-                on=(
-                    (
-                        customer_ol_cte.c.warehouse_id
-                        == customer_ol_cte_self_join.c.warehouse_id
-                    )
-                    & (
-                        customer_ol_cte.c.district_id
-                        == customer_ol_cte_self_join.c.district_id
-                    )
-                    & (
-                        customer_ol_cte.c.order_id
-                        == customer_ol_cte_self_join.c.order_id
-                    )
-                ),
-            )
             .where(
-                customer_ol_cte.c.item_id < customer_ol_cte_self_join.c.item_id
+                (OrderLine.warehouse_id != self.warehouse_id)
+                & (
+                    OrderLine.item_id.in_(
+                        customer_order_lines.select(
+                            customer_order_lines.c.item_id
+                        ).distinct()
+                    )
+                )
             )
+            .cte("other_order_line_with_same_item")
         )
-
-        other_customer_ol_pairs = (
-            other_ol_cte.select_from(
-                other_ol_cte.c.item_id.alias("ool_i_id_1"),
-                other_ol_cte_self_join.c.item_id.alias("ool_i_id_2"),
-                other_ol_cte.c.warehouse_id,
-                other_ol_cte.c.district_id,
-                other_ol_cte.c.order_id,
-                other_ol_cte.c.customer_id,
-            )
-            .join(
-                other_ol_cte_self_join,
-                on=(
-                    (
-                        other_ol_cte.c.warehouse_id
-                        == other_ol_cte_self_join.c.warehouse_id
-                    )
-                    & (
-                        other_ol_cte.c.district_id
-                        == other_ol_cte_self_join.c.district_id
-                    )
-                    & (
-                        other_ol_cte.c.order_id
-                        == other_ol_cte_self_join.c.order_id
-                    )
-                ),
-            )
-            .where(other_ol_cte.c.item_id < other_ol_cte_self_join.c.item_id)
+        other_order_line_with_same_item_self_join = (
+            other_order_line_with_same_item.alias("ool2")
         )
 
         # Find common pairs
         related_customers = (
-            customer_ol_pairs.select_from(
-                other_customer_ol_pairs.c.warehouse_id,
-                other_customer_ol_pairs.c.district_id,
-                other_customer_ol_pairs.c.customer_id,
+            other_order_line_with_same_item.select_from(
+                other_order_line_with_same_item.c.warehouse_id.alias(
+                    "warehouse_id"
+                ),
+                other_order_line_with_same_item.c.district_id.alias(
+                    "district_id"
+                ),
+                Order.customer_id.alias("customer_id"),
             )
             .distinct()
             .join(
-                other_customer_ol_pairs,
+                other_order_line_with_same_item_self_join,
                 on=(
                     (
-                        customer_ol_pairs.c.col_i_id_1
-                        == other_customer_ol_pairs.c.ool_i_id_1
+                        other_order_line_with_same_item.c.warehouse_id
+                        == other_order_line_with_same_item_self_join.c.warehouse_id
                     )
                     & (
-                        customer_ol_pairs.c.col_i_id_2
-                        == other_customer_ol_pairs.c.ool_i_id_2
+                        other_order_line_with_same_item.c.district_id
+                        == other_order_line_with_same_item_self_join.c.district_id
+                    )
+                    & (
+                        other_order_line_with_same_item.c.order_id
+                        == other_order_line_with_same_item_self_join.c.order_id
+                    )
+                    & (
+                        other_order_line_with_same_item.c.item_id
+                        < other_order_line_with_same_item_self_join.c.item_id
                     )
                 ),
             )
+            .join(
+                Order,
+                on=(other_order_line_with_same_item.c.order_id == Order.id),
+            )
+            .where(
+                DBTuple(
+                    other_order_line_with_same_item.c.item_id,
+                    other_order_line_with_same_item_self_join.c.item_id,
+                ).in_(
+                    customer_order_line_item_pairs.select(
+                        customer_order_line_item_pairs.c.col_i_id_1,
+                        customer_order_line_item_pairs.c.col_i_id_2,
+                    )
+                )
+            )
+            .order_by(
+                other_order_line_with_same_item.c.warehouse_id,
+                other_order_line_with_same_item.c.district_id,
+                Order.customer_id,
+            )
             .with_cte(
-                customer_ol_cte,
-                customer_ol_cte_self_join,
-                other_ol_cte,
-                other_ol_cte_self_join,
+                customer_order_lines,
+                customer_order_line_self_join,
+                customer_order_line_item_pairs,
+                other_order_line_with_same_item,
+                other_order_line_with_same_item_self_join,
             )
         )
 
-        return ([query for query in related_customers],)
+        return ([query for query in related_customers.dicts()],)
 
     def _output_result(self, customers: List[RelatedCustomerOutput]):
         """

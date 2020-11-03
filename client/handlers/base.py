@@ -4,7 +4,7 @@ from functools import wraps
 from statistics import mean
 from typing import Any, TextIO, List
 
-from common.logging import error_console, logger
+from common.logging_tool import error_console, logger
 from common.stats import time_execution, median, percentile
 
 
@@ -67,13 +67,13 @@ class BaseSingleClientHandler(ABC):
             self._read_and_execute_transactions
         )()
         self.throughput = self.num_of_transactions / self.elapsed_time
-        self.avg_latency = mean(self.individual_execution_time)
-        self.median_latency = median(self.individual_execution_time)
-        self.latency_95_pct = percentile(
-            self.individual_execution_time, percent=0.95
+        self.avg_latency = mean(self.individual_execution_time) * 1000
+        self.median_latency = median(self.individual_execution_time) * 1000
+        self.latency_95_pct = (
+            percentile(self.individual_execution_time, percent=0.95) * 1000
         )
-        self.latency_99_pct = percentile(
-            self.individual_execution_time, percent=0.98
+        self.latency_99_pct = (
+            percentile(self.individual_execution_time, percent=0.98) * 1000
         )
         self.print_measurements()
 

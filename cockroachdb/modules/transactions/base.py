@@ -4,7 +4,7 @@ from typing import List, Any
 from cockroachdb.modules.connection import (
     database,
 )
-from common.logging import (
+from common.logging_tool import (
     console,
     create_table,
     logger,

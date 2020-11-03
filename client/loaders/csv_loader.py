@@ -3,7 +3,7 @@ import pathlib
 from abc import ABC, abstractmethod
 from typing import TextIO, List, Callable, Any
 
-from common.logging import logger
+from common.logging_tool import logger
 
 # File names
 FILE_NAMES = [

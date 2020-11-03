@@ -11,7 +11,7 @@ from cockroachdb.modules.models import (
     Warehouse,
 )
 from cockroachdb.modules.transactions.base import BaseTransaction
-from common.logging import logger
+from common.logging_tool import logger
 
 
 class NewOrderItemInput(TypedDict):
