@@ -29,7 +29,7 @@ def popular_item(session, warehouse, district, limit):
         customers_by_id[customer.c_id].append(customer)
     for id in order_ids:
         max_quantity = max([ol.ol_quantity for ol in ols_by_order[id]])
-        popular_items_in_order = [ol.ol_i_id for ol in ols_by_order[id] if ol.OL_QUANTITY == max_quantity]
+        popular_items_in_order = [ol.ol_i_id for ol in ols_by_order[id] if ol.ol_quantity == max_quantity]
         popular_items_by_order[id] = (popular_items_in_order, max_quantity)
         all_popular_item_ids.update(popular_items_in_order)
         for id in popular_items_in_order:
@@ -40,7 +40,7 @@ def popular_item(session, warehouse, district, limit):
     for item in items:
         item_by_id[item.i_id] = item
 
-    result = {'identifier': (warehouse, district), 'number': limit, 'orders': []}
+    result = {'identifier': (warehouse, district), 'number': limit, 'orders': [], 'popular_items': []}
     for order in orders:
         customer = customers_by_id[order.o_c_id]
         entry = {'O_ID': order.o_id,
@@ -54,6 +54,6 @@ def popular_item(session, warehouse, district, limit):
         result['orders'].append(entry)
     for id in all_popular_item_ids:
         entry = {'name': item_by_id[id].i_name,
-                 'percentage': item_occurance[id] * 1.0 / limit}
+                 'percentage': item_occurance[id] * 1.0 / int(limit)}
         result['popular_items'].append(entry)
     return result
