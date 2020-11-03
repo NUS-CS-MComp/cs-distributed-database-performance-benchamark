@@ -1,11 +1,11 @@
 -- Stock level query using warehouse=1, district=1, last_order=10, threshold=100
-SELECT COUNT(*)
+SELECT COUNT((s_w_id, s_i_id))
 FROM stock
 JOIN (
     SELECT DISTINCT ol_w_id, ol_i_id
     FROM order_line
     JOIN (
-        SELECT *
+        SELECT o_w_id, o_d_id, o_id
         FROM "order"
         JOIN district d on d.d_w_id = o_w_id and d.d_id = o_d_id
         WHERE o_w_id = 1

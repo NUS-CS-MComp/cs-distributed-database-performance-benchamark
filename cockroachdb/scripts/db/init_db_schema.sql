@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS warehouse;
 
 CREATE TABLE IF NOT EXISTS warehouse
 (
-    W_ID       INTEGER               NOT NULL PRIMARY KEY,
+    W_ID       INTEGER               NOT NULL,
     W_NAME     CHARACTER VARYING(10) NOT NULL,
     W_STREET_1 CHARACTER VARYING(20) NOT NULL,
     W_STREET_2 CHARACTER VARYING(20),
@@ -17,7 +17,10 @@ CREATE TABLE IF NOT EXISTS warehouse
     W_STATE    CHARACTER(2),
     W_ZIP      CHARACTER(9)          NOT NULL,
     W_TAX      NUMERIC(4, 4)         NOT NULL,
-    W_YTD      NUMERIC(12, 2)        NOT NULL DEFAULT 0.00
+    W_YTD      NUMERIC(12, 2)        NOT NULL DEFAULT 0.00,
+    PRIMARY KEY (W_ID),
+    FAMILY warehouse_txn_info (W_ID, W_YTD),
+    FAMILY warehouse_meta (W_NAME, W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_TAX)
 );
 
 CREATE TABLE IF NOT EXISTS district
@@ -33,8 +36,10 @@ CREATE TABLE IF NOT EXISTS district
     D_TAX       NUMERIC(4, 4)         NOT NULL,
     D_YTD       NUMERIC(12, 2)        NOT NULL DEFAULT 0.00,
     D_NEXT_O_ID INTEGER               NOT NULL DEFAULT 1,
-    PRIMARY KEY (D_W_ID, D_ID)
-);
+    PRIMARY KEY (D_W_ID, D_ID),
+    FAMILY district_txn_info (D_ID, D_W_ID, D_YTD, D_NEXT_O_ID),
+    FAMILY district_meta (D_NAME, D_STREET_1, D_STREET_2, D_CITY, D_STATE, D_ZIP, D_TAX)
+) INTERLEAVE IN PARENT warehouse (D_W_ID);
 
 CREATE TABLE IF NOT EXISTS customer
 (
@@ -60,8 +65,11 @@ CREATE TABLE IF NOT EXISTS customer
     C_DELIVERY_CNT INTEGER               NOT NULL DEFAULT 0,
     C_DATA         CHARACTER VARYING(500),
     PRIMARY KEY (C_W_ID, C_D_ID, C_ID),
-    FOREIGN KEY (C_W_ID, C_D_ID) references district (D_W_ID, D_ID)
-);
+    FOREIGN KEY (C_W_ID, C_D_ID) references district (D_W_ID, D_ID),
+    FAMILY customer_txn_info (C_ID, C_W_ID, C_D_ID, C_BALANCE, C_YTD_PAYMENT, C_PAYMENT_CNT, C_DELIVERY_CNT),
+    FAMILY customer_meta (C_FIRST, C_MIDDLE, C_LAST, C_STREET_1, C_STREET_2, C_CITY, C_STATE, C_ZIP,
+        C_PHONE, C_SINCE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, C_DATA)
+) INTERLEAVE IN PARENT district (C_W_ID, C_D_ID);
 
 CREATE TABLE IF NOT EXISTS "order"
 (
@@ -74,17 +82,22 @@ CREATE TABLE IF NOT EXISTS "order"
     O_ALL_LOCAL  NUMERIC(1, 0) NOT NULL,
     O_ENTRY_D    TIMESTAMP     NOT NULL,
     PRIMARY KEY (O_W_ID, O_D_ID, O_ID),
-    FOREIGN KEY (O_W_ID, O_D_ID, O_C_ID) REFERENCES customer (C_W_ID, C_D_ID, C_ID)
-);
+    FOREIGN KEY (O_W_ID, O_D_ID, O_C_ID) REFERENCES customer (C_W_ID, C_D_ID, C_ID),
+    INDEX (O_W_ID, O_D_ID) STORING (O_ENTRY_D),
+    INDEX (O_W_ID, O_D_ID, O_C_ID),
+    FAMILY order_txn_info (O_ID, O_W_ID, O_D_ID, O_C_ID, O_CARRIER_ID),
+    FAMILY order_meta (O_OL_CNT, O_ALL_LOCAL, O_ENTRY_D)
+) INTERLEAVE IN PARENT district (O_W_ID, O_D_ID);
 
 DROP TABLE IF EXISTS item;
 CREATE TABLE IF NOT EXISTS item
 (
-    I_ID    INTEGER               NOT NULL PRIMARY KEY,
+    I_ID    INTEGER               NOT NULL,
     I_NAME  CHARACTER VARYING(24) NOT NULL,
     I_PRICE NUMERIC(5, 2)         NOT NULL,
     I_IM_ID INTEGER,
-    I_DATA  CHARACTER VARYING(50)
+    I_DATA  CHARACTER VARYING(50),
+    PRIMARY KEY (I_ID)
 );
 
 CREATE TABLE IF NOT EXISTS order_line
@@ -100,10 +113,12 @@ CREATE TABLE IF NOT EXISTS order_line
     OL_QUANTITY    NUMERIC(2, 0) NOT NULL,
     OL_DIST_INFO   CHARACTER VARYING(24),
     PRIMARY KEY (OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER),
-    FOREIGN KEY (OL_W_ID, OL_D_ID, OL_O_ID) REFERENCES "order" (O_W_ID, O_D_ID, O_ID)
-);
+    FOREIGN KEY (OL_W_ID, OL_D_ID, OL_O_ID) REFERENCES "order" (O_W_ID, O_D_ID, O_ID),
+    FAMILY order_line_txn_info (OL_NUMBER, OL_O_ID, OL_W_ID, OL_D_ID, OL_DELIVERY_D),
+    FAMILY order_line_meta (OL_I_ID, OL_AMOUNT, OL_SUPPLY_W_ID, OL_QUANTITY, OL_DIST_INFO)
+) INTERLEAVE IN PARENT "order" (OL_W_ID, OL_D_ID, OL_O_ID);
 
-CREATE INDEX idx_order_line_by_warehouse_district_order_id ON order_line (OL_W_ID, OL_D_ID, OL_O_ID);
+-- CREATE INDEX idx_order_line_by_warehouse_district_order_id ON order_line (OL_W_ID, OL_D_ID, OL_O_ID);
 
 CREATE TABLE IF NOT EXISTS stock
 (
@@ -124,5 +139,8 @@ CREATE TABLE IF NOT EXISTS stock
     S_DIST_09    CHARACTER(24),
     S_DIST_10    CHARACTER(24),
     S_DATA       CHARACTER VARYING(50),
-    PRIMARY KEY (S_W_ID, S_I_ID)
-);
+    PRIMARY KEY (S_W_ID, S_I_ID),
+    FAMILY stock_txn_info (S_W_ID, S_I_ID, S_QUANTITY, S_YTD, S_ORDER_CNT, S_REMOTE_CNT),
+    FAMILY stock_meta (S_DIST_01, S_DIST_02, S_DIST_03, S_DIST_04, S_DIST_05, S_DIST_06, S_DIST_07,
+        S_DIST_08, S_DIST_09, S_DIST_10, S_DATA)
+) INTERLEAVE IN PARENT "warehouse" (S_W_ID);

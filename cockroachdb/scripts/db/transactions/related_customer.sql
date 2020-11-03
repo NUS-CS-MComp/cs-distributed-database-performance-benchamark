@@ -3,7 +3,7 @@ WITH customer_order_lines AS (
     SELECT DISTINCT ol_i_id, ol_w_id, ol_d_id, ol_o_id
     FROM order_line
     JOIN (
-        SELECT *
+        SELECT o_w_id, o_d_id, o_id
         FROM "order"
         WHERE o_w_id = 1
           AND o_d_id = 1

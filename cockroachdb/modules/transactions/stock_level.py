@@ -88,7 +88,7 @@ class StockLevelTransaction(BaseTransaction):
 
         # Get stocks and determine counts of those below threshold
         below_threshold_count = (
-            Stock.select()
+            Stock.select(Stock.warehouse_id, Stock.item_id)
             .join(
                 order_lines_from_order,
                 on=(

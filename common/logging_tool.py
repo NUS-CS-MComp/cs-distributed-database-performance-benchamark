@@ -1,6 +1,7 @@
 import logging
 import logging.handlers as handlers
 import os
+import shutil
 import sys
 from typing import TypedDict, List
 
@@ -63,4 +64,4 @@ logger.addHandler(file_handler)
 
 console = Console(file=sys.stdout)
 error_console = Console(file=sys.stderr)
-OUTPUT_DIVIDER = "================================================================================"
+OUTPUT_DIVIDER = "=" * shutil.get_terminal_size(fallback=(120, 50)).columns
