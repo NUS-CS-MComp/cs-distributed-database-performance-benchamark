@@ -36,7 +36,7 @@ class TopBalanceTransaction(BaseTransaction):
         """
 
         # Get customers with warehouse and district information
-        customer_query = (
+        top_customer_query = (
             Customer.select(
                 Case(
                     None,
@@ -57,22 +57,39 @@ class TopBalanceTransaction(BaseTransaction):
                     ),
                 ).alias("customer_name"),
                 Customer.balance.alias("customer_balance"),
+                Customer.warehouse_id.alias("warehouse_id"),
+                Customer.district_id.alias("district_id"),
+            )
+            .order_by(Customer.balance.desc())
+            .limit(TopBalanceTransaction.LIMIT)
+            .cte("top_customer_query")
+        )
+        top_balance_query = (
+            top_customer_query.select_from(
+                top_customer_query.c.customer_name,
+                top_customer_query.c.customer_balance,
                 Warehouse.name.alias("warehouse_name"),
                 District.name.alias("district_name"),
             )
             .join(
                 District,
                 on=(
-                    (Customer.warehouse_id == District.warehouse_id)
-                    & (Customer.district_id == District.id)
+                    (
+                        top_customer_query.c.warehouse_id
+                        == District.warehouse_id
+                    )
+                    & (top_customer_query.c.district_id == District.id)
                 ),
             )
-            .join(Warehouse, on=(District.warehouse_id == Warehouse.id))
-            .order_by(Customer.balance.desc())
-            .limit(TopBalanceTransaction.LIMIT)
+            .join(
+                Warehouse,
+                on=(top_customer_query.c.warehouse_id == Warehouse.id),
+            )
+            .order_by(top_customer_query.c.customer_balance.desc())
+            .with_cte(top_customer_query)
         )
 
-        return ([result for result in customer_query.dicts()],)
+        return ([result for result in top_balance_query.dicts()],)
 
     def _output_result(
         self,
