@@ -4,7 +4,7 @@ from functools import wraps
 from statistics import mean
 from typing import Any, TextIO, List
 
-from common.logging import error_console, logger
+from common.logging_tool import error_console, logger
 from common.stats import time_execution, median, percentile
 
 
