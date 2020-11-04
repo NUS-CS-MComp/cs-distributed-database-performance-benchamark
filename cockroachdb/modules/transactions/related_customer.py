@@ -163,7 +163,17 @@ class RelatedCustomerTransaction(BaseTransaction):
             )
             .join(
                 Order,
-                on=(other_order_line_with_same_item.c.order_id == Order.id),
+                on=(
+                    (
+                        other_order_line_with_same_item.c.warehouse_id
+                        == Order.warehouse_id
+                    )
+                    & (
+                        other_order_line_with_same_item.c.district_id
+                        == Order.district_id
+                    )
+                    & (other_order_line_with_same_item.c.order_id == Order.id)
+                ),
             )
             .where(
                 DBTuple(
