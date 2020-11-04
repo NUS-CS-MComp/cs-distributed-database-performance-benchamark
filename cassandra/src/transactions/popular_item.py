@@ -13,6 +13,7 @@ def popular_item(session, warehouse, district, limit):
     cql_get_customer_names = 'SELECT C_ID, C_FIRST, C_MIDDLE, C_LAST FROM customer ' \
                              'WHERE C_W_ID = {w} AND C_D_ID = {d} AND C_ID IN {c}'
     orders = session.execute(cql_get_orders.format(w=warehouse, d=district, l=limit))
+    orders = [o for o in orders]
     order_ids = [order.o_id for order in orders]
     customer_ids = [order.o_c_id for order in orders]
     ols = session.execute(cql_get_ols.format(w=warehouse, d=district, o=get_tuple(order_ids)))
