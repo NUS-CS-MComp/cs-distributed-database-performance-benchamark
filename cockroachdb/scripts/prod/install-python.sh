@@ -1,6 +1,6 @@
-#!/bin/zsh
+#!/bin/bash
 
-source ./config.sh
+# DEPRECATED
 
 export LD_LIBRARY_PATH=$FOLDER_NAME/libffi33/lib64
 export LD_RUN_PATH=$FOLDER_NAME/libffi33/lib64

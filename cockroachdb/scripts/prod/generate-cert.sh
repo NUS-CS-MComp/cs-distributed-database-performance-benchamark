@@ -1,26 +1,25 @@
-#!/bin/zsh
+#!/bin/bash
 
-source ./config.sh
-
-function create_certs {
-  cockroach cert create-node localhost xcnc$1.comp.nus.edu.sg --certs-dir=certs --ca-key=keys/ca.key
-  cockroach cert create-client root --certs-dir=certs --ca-key=keys/ca.key
-  cockroach cert create-client $USER --certs-dir=certs --ca-key=keys/ca.key
-  cp certs/* certs_$1/
-  rm certs/node.crt certs/node.key certs/client*
+create_certs() {
+  host=$1
+  user=$2
+  if [ ! -f server_certs/"$host"/ca.crt ]; then
+    echo "Creating new certificate for host $host"
+    cockroach cert create-node localhost "$host" --certs-dir=certs --ca-key=keys/ca.key
+    cockroach cert create-client root --certs-dir=certs --ca-key=keys/ca.key
+    cockroach cert create-client "$user" --certs-dir=certs --ca-key=keys/ca.key
+    mkdir -p server_certs/"$host"/
+    cp certs/* server_certs/"$host"/
+    rm certs/node.crt certs/node.key certs/client*
+  fi
 }
 
-function upload_certs {
-  ssh $USER@xcnc$1.comp.nus.edu.sg "mkdir -p $FOLDER_NAME/cockroachdb/certs"
-  scp certs_$1/* $USER@xcnc$1.comp.nus.edu.sg:$FOLDER_NAME/cockroachdb/certs
+upload_certs() {
+  host=$1
+  user=$2
+  key=$3
+  folder=$4
+  echo "Uploading new certificate to host $user@$host:$folder"
+  ssh -i "$key" "$user"@"$host" "mkdir -p $folder/cockroachdb/certs"
+  scp server_certs/"$host"/* "$user"@"$1":"$folder"/cockroachdb/certs/
 }
-
-if [ ! -f certs/ca.crt ]; then
-  cockroach cert create-ca --certs-dir=certs --ca-key=keys/ca.key --allow-ca-key-reuse
-  for seq in $(seq $SERVER_SEQ_START $SERVER_SEQ_END);
-    do
-      create_certs $seq;
-    done
-fi
-
-for seq in $(seq $SERVER_SEQ_START $SERVER_SEQ_END); do upload_certs $seq; done

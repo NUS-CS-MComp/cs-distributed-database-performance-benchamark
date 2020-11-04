@@ -1,25 +1,22 @@
-#!/bin/zsh
+#!/bin/bash
 
-source ./config.sh
-
-function create_group_folder {
-  if [ ! -e $FOLDER_NAME ]; then
-    mkdir $FOLDER_NAME
+create_group_folder() {
+  folder=$1
+  if [ ! -e "$folder" ]; then
+    mkdir "$folder"
   fi
-  if [ ! -e $FOLDER_NAME/cockroachdb ]; then
-    mkdir $FOLDER_NAME/cockroachdb
+  if [ ! -e "$folder"/cockroachdb ]; then
+    mkdir "$folder"/cockroachdb
   fi
 }
 
-function install_cockroachdb {
-  if [ ! -e $FOLDER_NAME/cockroachdb/bin/ ]; then
-    cd $FOLDER_NAME/cockroachdb
+install_cockroachdb() {
+  folder=$1
+  if [ ! -e "$folder"/cockroachdb/bin/ ]; then
+    cd "$folder"/cockroachdb || exit
     wget -qO- https://binaries.cockroachdb.com/cockroach-v19.2.9.linux-amd64.tgz | tar xvz
     mv cockroach-v19.2.9.linux-amd64/ bin/
+  else
+    exit 1
   fi
 }
-
-for seq in $(seq $SERVER_SEQ_START $SERVER_SEQ_END);
-  do
-    ssh $USER@xcnc$seq.comp.nus.edu.sg "$(typeset -f create_group_folder); $(typeset -f install_cockroachdb); FOLDER_NAME=$FOLDER_NAME; create_group_folder && install_cockroachdb";
-  done

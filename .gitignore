@@ -3,10 +3,10 @@
 client/experiments/outputs
 cassandra/project-files/
 cockroachdb/scripts/bin
-cockroachdb/scripts/dev/node*
+cockroachdb/scripts/**/store
 cockroachdb/scripts/**/certs*
 cockroachdb/scripts/**/keys
-cockroachdb/scripts/**/server_ssh
+cockroachdb/scripts/**/server_certs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
