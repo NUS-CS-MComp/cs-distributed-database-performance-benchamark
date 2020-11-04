@@ -107,8 +107,11 @@ if __name__ == '__main__':
     result['nTXs'] = nTX
     result['total'] = df.sum()
     result['throughput'] = nTX / result['total']
-    result['average'] = df.mean()
-    result['median'] = df.median()
-    result['95percentile'] = df.quantile(0.95)
-    result['99percentile'] = df.quantile(0.99)
-    print(result)
+    result['average'] = df.mean() * 1000
+    result['median'] = df.median() * 1000
+    result['95percentile'] = df.quantile(0.95) * 1000
+    result['99percentile'] = df.quantile(0.99) * 1000
+    l = [result['nTXs'], result['total'], result['throughput'], result['average'], result['median'], result['95percentile'], result['99percentile']]
+    l = [str(e) for e in l]
+    print(",".join(l))
+
