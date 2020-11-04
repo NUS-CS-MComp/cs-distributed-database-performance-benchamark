@@ -33,10 +33,16 @@ class Order(BaseModel):
         return self.entry_date.strftime("%b %d, %Y, %X (UTC)")
 
     class Meta:
-        primary_key = CompositeKey("warehouse_id", "district_id", "id")
+        primary_key = CompositeKey(
+            "warehouse_id", "district_id", "customer_id", "id"
+        )
         constraints = [
             SQL(
                 "FOREIGN KEY (o_w_id, o_d_id, o_c_id) "
                 "REFERENCES customer (c_w_id, c_d_id, c_id)"
             )
         ]
+        indexes = (
+            (("warehouse_id", "district_id", "order_id"), True),
+            (("warehouse_id", "district_id"), False),
+        )

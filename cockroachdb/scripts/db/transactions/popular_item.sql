@@ -22,23 +22,3 @@ HAVING (ol1.ol_o_id, SUM(ol1.ol_quantity)) IN (
     GROUP BY sum_ol.ol_w_id, sum_ol.ol_d_id, sum_ol.ol_o_id
 )
 ORDER BY ol1.ol_o_id DESC, i.i_id, qty DESC;
-
--- Trial round: Get items with max quantity in each order, sampled with d_id = 1, w_id = 1 and o_id = 3246
-SELECT ol2.ol_w_id, ol2.ol_d_id, ol2.ol_o_id, ol2.ol_i_id, SUM(ol2.ol_quantity)
-FROM order_line ol2
-WHERE ol2.ol_w_id = 1 and ol2.ol_d_id = 1 and ol2.ol_o_id >= 300
-GROUP BY ol2.ol_w_id, ol2.ol_d_id, ol2.ol_o_id, ol2.ol_i_id
-HAVING (ol2.ol_w_id, ol2.ol_d_id, ol2.ol_o_id, SUM(ol2.ol_quantity)) IN
-    (
-    -- Get max quantity for each order
-    SELECT ol1.w_id, ol1.d_id, ol1.o_id, MAX(ol1.sum_quantity) as "max_quantity"
-    FROM
-    (
-        -- Group order by items and count sum of quantity for each item
-        SELECT ol.ol_w_id as "w_id", ol.ol_d_id as "d_id", ol.ol_o_id as "o_id", ol.ol_i_id as "i_id", SUM(ol.ol_quantity) as "sum_quantity"
-        FROM order_line ol
-        WHERE ol.ol_w_id = 1 and ol.ol_d_id = 1 and ol.ol_o_id >= 300
-        GROUP BY ol.ol_w_id, ol.ol_d_id, ol.ol_o_id, ol.ol_i_id
-    ) ol1
-    GROUP BY ol1.w_id, ol1.d_id, ol1.o_id
-    );

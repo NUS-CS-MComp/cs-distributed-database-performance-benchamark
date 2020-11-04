@@ -140,7 +140,7 @@ kill_existing_process() {
   server=$1
   folder=$2
   echo "Terminating existing Cockroach instances..."
-  # rm -rf "$folder"/cockroachdb/store
+  rm -rf "$folder"/cockroachdb/store
   for pid in $(ps -ef | grep -v grep | grep "cockroach" | awk '{print $2}'); do kill -9 "$pid"; done
   local index
   http_port=${http_ports[$index]}

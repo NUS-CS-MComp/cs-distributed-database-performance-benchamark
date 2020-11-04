@@ -118,7 +118,9 @@ class PaymentTransaction(BaseTransaction):
                     customer.phone_number,
                     customer.since.strftime("%b %d, %Y"),
                     customer.credit,
-                    "{:.2%}".format(customer.credit_limit),
+                    None
+                    if customer.credit_limit is None
+                    else "{:.2%}".format(customer.credit_limit),
                     "{:.2%}".format(customer.discount),
                     "{:.2f}".format(customer.balance),
                 ]
