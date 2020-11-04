@@ -43,9 +43,13 @@ if __name__ == '__main__':
     latency = []
     nTX = 0
     l = 0
-    # while (l < nlines):
-    while (l < 200 and l < len(input_data)):
+
+    epoc = time.time()
+    counter = 0
+
+    while (l < nlines):
         req = input_data[l].rstrip()
+        print(counter, req)
         args = req.split(",")
         start_time = time.time()
         if args[0] == "N":
@@ -60,7 +64,7 @@ if __name__ == '__main__':
                 item_number.append(int(args[0]))
                 supplier_warehouse.append(int(args[1]))
                 quantity.append(int(args[2]))
-            output = new_order(session, w_id, d_id, c_id, m, item_number, supplier_warehouse, quantity)
+            output = new_order(session, w_id, d_id, c_id, m, item_number, supplier_warehouse, quantity, background_rc=True)
             l += m
         elif args[0] == "P":
             c_w_id = int(args[1])
@@ -87,10 +91,16 @@ if __name__ == '__main__':
             output = related_customer(session, *args[1:])
         else:
             raise Exception("Invalid transaction type: %s" % args[0])
-        print(output)
+        #print(output)
         latency.append(time.time() - start_time)
         nTX += 1
         l += 1
+
+        counter += 1
+        if counter % 100 == 0:
+            elapsed = time.time() - epoc
+            throughput = counter * 1.0 / elapsed
+            print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
     
     df = pd.Series(latency)
     result = {}
