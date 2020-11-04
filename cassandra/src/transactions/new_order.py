@@ -137,7 +137,6 @@ def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id,
     counter = Counter([(c.c_id, c.d_id) for c in relevant_customers])
     related_customers = [c for c in counter if counter[c] > 1]
 
-    threads = []
     for rc in related_customers:
         utils.do_query(session, cql_insert, (w_id, d_id, c_id, other_w, rc[1], rc[0]), 'write')
         utils.do_query(session, cql_insert, (other_w, rc[1], rc[0], w_id, d_id, c_id), 'write')
