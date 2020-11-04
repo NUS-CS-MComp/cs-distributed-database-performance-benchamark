@@ -139,12 +139,6 @@ def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id,
 
     threads = []
     for rc in related_customers:
-        t1 = threading.Thread(target=utils.do_query, args=(session, cql_insert, (w_id, d_id, c_id, other_w, rc[1], rc[0]), 'write'))
-        t2 = threading.Thread(target=utils.do_query, args=(session, cql_insert, (other_w, rc[1], rc[0], w_id, d_id, c_id), 'write'))
-        threads.append(t1)
-        threads.append(t2)
-        t1.start()
-        t2.start()
-    for t in threads:
-        t.join()
+        utils.do_query(session, cql_insert, (w_id, d_id, c_id, other_w, rc[1], rc[0]), 'write')
+        utils.do_query(session, cql_insert, (other_w, rc[1], rc[0], w_id, d_id, c_id), 'write')
 
