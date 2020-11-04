@@ -42,7 +42,4 @@ class Order(BaseModel):
                 "REFERENCES customer (c_w_id, c_d_id, c_id)"
             )
         ]
-        indexes = (
-            (("warehouse_id", "district_id", "order_id"), True),
-            (("warehouse_id", "district_id"), False),
-        )
+        indexes = (("warehouse_id", "district_id", "order_id"), True)
