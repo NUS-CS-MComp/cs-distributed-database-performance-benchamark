@@ -12,10 +12,12 @@ def delivery(session, w_id, carrier_id):
             ''',
             (w_id, district_no)
         )
-        n = 0; c = 0
+        n = None; c = None
         for row in rows:
             n = row[0]; c = row[1]
             break
+        if n == None:   # no undelivered orders in this district
+            continue
         utils.do_query(session, 
             '''
             UPDATE orders SET O_CARRIER_ID = '%s'
