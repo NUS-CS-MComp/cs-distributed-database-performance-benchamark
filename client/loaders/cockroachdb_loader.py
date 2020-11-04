@@ -57,7 +57,11 @@ class CockroachDBCSVLoader(CSVLoader):
             initialize_cockroach_database,
         )
 
-        database.initialize(initialize_cockroach_database())
+        database.initialize(
+            initialize_cockroach_database(
+                hosts=self.db_hosts, port=self.db_port
+            )
+        )
         return dict(database=database)
 
     def transform_row_data(self, row, **kwargs):

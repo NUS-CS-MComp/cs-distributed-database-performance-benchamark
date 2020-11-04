@@ -29,7 +29,11 @@ class CockroachDBExperiment(BaseExperiment):
             initialize_cockroach_database,
         )
 
-        database.initialize(initialize_cockroach_database())
+        database.initialize(
+            initialize_cockroach_database(
+                hosts=self.db_hosts, port=self.db_port
+            )
+        )
 
     @property
     def experiment_configurations(self):
@@ -38,7 +42,13 @@ class CockroachDBExperiment(BaseExperiment):
         :return: selected configuration given experiment number
         """
 
-        configurations = {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}
+        from client.config import IS_PROD
+
+        configurations = (
+            {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}
+            if IS_PROD
+            else {5: (5, 5)}
+        )
         if self.experiment_number not in configurations:
             raise NotImplementedError(
                 f"No such experiment number: {self.experiment_number}"
@@ -57,11 +67,20 @@ class CockroachDBExperiment(BaseExperiment):
         Client = SingleClientHandlerFactory.generate_new_client(
             SingleClientHandlerFactory.COCKROACH_DB
         )
+
+        try:
+            assert num_of_servers == len(self.db_hosts)
+        except AssertionError:
+            raise AssertionError(
+                "Number of server does not match host list length"
+            )
+
         self.clients = [
             Client(
                 client_number=index + 1,
-                num_servers=num_of_servers,
                 data_dir=self.data_dir,
+                db_hosts=self.db_hosts,
+                db_port=self.db_port,
             )
             for index in range(num_of_clients)
         ]

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Usage example:
+# bash bootstrap.sh -l host1.com,host2.com,host3.com -n 3 -k ~/.ssh/id_rsa -t cs4224o -f /temp/cockroach -p 26257 -h 8080
+
 usage() {
   echo "Usage: $0 [-u] [-q] [-l hosts] [-n <number>] [-k <string>] [-t <string>] [-f <string>] [-p <number>] [-h <number>]" 1>&2
   echo "  -u check usage" 1>&2
@@ -137,7 +140,7 @@ kill_existing_process() {
   server=$1
   folder=$2
   echo "Terminating existing Cockroach instances..."
-  rm -rf "$folder"/cockroachdb/store
+  # rm -rf "$folder"/cockroachdb/store
   for pid in $(ps -ef | grep -v grep | grep "cockroach" | awk '{print $2}'); do kill -9 "$pid"; done
   local index
   http_port=${http_ports[$index]}

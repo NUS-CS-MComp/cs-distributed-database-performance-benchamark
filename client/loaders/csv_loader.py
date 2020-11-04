@@ -86,6 +86,8 @@ class CSVLoader(ABC):
         self,
         data_dir: pathlib.Path,
         file_names: List[str],
+        db_hosts: List[str],
+        db_port: int,
         workers=4,
         batch_size=999,
         print_interval=10000,
@@ -94,6 +96,8 @@ class CSVLoader(ABC):
         Initiate a new csv loader class with multiprocessing specifications
         :param data_dir: data directory
         :param file_names: file names to parse as csv object
+        :param db_hosts: list of hosts
+        :param db_port: database port number
         :param workers: number of CPU workers
         :param batch_size: batch size
         :param print_interval: logging interval
@@ -102,6 +106,8 @@ class CSVLoader(ABC):
         self.workers = workers
         self.batch_size = batch_size
         self.print_interval = print_interval
+        self.db_hosts = db_hosts
+        self.db_port = db_port
 
     def run(self):
         """

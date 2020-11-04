@@ -16,17 +16,24 @@ class BaseExperiment(ABC):
         self,
         experiment_number: int,
         data_dir: pathlib.Path,
+        db_hosts: List[str],
+        db_port: int,
         writer: Optional[ExperimentOutputWriter] = ExperimentOutputWriter(),
     ):
         """
         Initiate a new experiment handler
         :param experiment_number: experiment number for retrieving experiment configurations
         :param data_dir: input data directory
+        :param db_hosts: list of hosts
+        :param db_port: database port number
+        :param writer: output writer
         """
         self.experiment_number = experiment_number
         self.clients: List[BaseSingleClientHandler] = []
         self.result = []
         self.data_dir = data_dir
+        self.db_hosts = db_hosts
+        self.db_port = db_port
         self.writer = writer
 
     def run(self):

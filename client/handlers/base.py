@@ -17,18 +17,21 @@ class BaseSingleClientHandler(ABC):
     def __init__(
         self,
         client_number: int,
-        num_servers: int,
         data_dir: pathlib.Path,
+        db_hosts: List[str],
+        db_port: int,
     ):
         """
         Initiate a new client handler
         :param client_number: number of clients for running transactions
         :param data_dir: input data directory
-        :param num_servers
+        :param db_hosts: list of hosts
+        :param db_port: database port number
         """
         self.client_number = client_number
-        self.num_servers = num_servers
         self.client_input_file = data_dir / f"{self.client_number}.txt"
+        self.db_hosts = db_hosts
+        self.db_port = db_port
         self.num_of_transactions = 0
         self.elapsed_time = 0
         self.individual_execution_time = []

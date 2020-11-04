@@ -21,7 +21,9 @@ class CockroachDBSingleClientHandler(BaseSingleClientHandler):
 
         database.initialize(
             initialize_cockroach_database(
-                server_idx=self.client_number % self.num_servers
+                host_index=self.client_number % len(self.db_hosts),
+                hosts=self.db_hosts,
+                port=self.db_port,
             )
         )
 

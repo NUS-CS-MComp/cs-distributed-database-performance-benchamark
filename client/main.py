@@ -1,6 +1,6 @@
 import argparse
 import pathlib
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 import client.config as config
 
@@ -12,6 +12,17 @@ def main():
     """
     parser = argparse.ArgumentParser()
     db_group = parser.add_mutually_exclusive_group()
+
+    parser.add_argument(
+        "--hosts",
+        help="List of hosts to resolve",
+        type=str,
+        default="xcnc35.comp.nus.edu.sg,xcnc36.comp.nus.edu.sg,xcnc37.comp.nus.edu.sg,xcnc38.comp.nus.edu.sg,"
+        "xcnc39.comp.nus.edu.sg",
+    )
+    parser.add_argument(
+        "--port", help="Database port number", type=int, default=26257
+    )
 
     parser.add_argument(
         "-l", "--load", help="Load data into database", action="store_true"
@@ -43,7 +54,7 @@ def main():
     )
 
     parser.add_argument(
-        "-n", "--experiment-number", help="Experiment number", type=int
+        "-en", "--experiment-number", help="Experiment number", type=int
     )
     parser.add_argument(
         "-dl",
@@ -71,10 +82,21 @@ def main():
         return
 
     if args.load:
-        load_data(database, args.load_data_path, args.workers, args.batch_size)
+        load_data(
+            database,
+            args.load_data_path,
+            args.workers,
+            args.batch_size,
+            args.hosts.split(","),
+            args.port,
+        )
     elif args.experiment:
         run_experiment(
-            database, args.experiment_number, args.transaction_data_path
+            database,
+            args.experiment_number,
+            args.transaction_data_path,
+            args.hosts.split(","),
+            args.port,
         )
 
 
@@ -83,6 +105,8 @@ def load_data(
     data_path: pathlib.Path,
     workers: int,
     batch_size: int,
+    hosts: List[str],
+    port: int,
 ):
     """
     Load data into database
@@ -90,6 +114,8 @@ def load_data(
     :param data_path: data path to read
     :param workers: number of workers for loading
     :param batch_size: batch loading size
+    :param hosts: list of hosts
+    :param port: database port number
     :return: None
     """
     if database == "cockroachdb":
@@ -102,6 +128,8 @@ def load_data(
             file_names=FILE_NAMES,
             workers=workers,
             batch_size=batch_size,
+            db_hosts=hosts,
+            db_port=port,
         )
         loader.run()
 
@@ -110,12 +138,16 @@ def run_experiment(
     database: Literal["cassandra", "cockroachdb"],
     experiment_number: int,
     transaction_data_path: pathlib.Path,
+    hosts: List[str],
+    port: int,
 ):
     """
     Run experiment given database and experiment number
     :param database: database name
     :param experiment_number: experiment number
     :param transaction_data_path: transaction data path to read
+    :param hosts: list of hosts
+    :param port: database port number
     :return: None
     """
     from client.config import TRANSACTION_DATA_PATH
@@ -133,6 +165,8 @@ def run_experiment(
         if transaction_data_path is None
         else transaction_data_path,
         experiment_number=experiment_number,
+        db_hosts=hosts,
+        db_port=port,
     )
     experiment.run()
 
