@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     if sys.argv[1] == 'preprocess':
         preprocess_related_customer(session)
-        return
+        sys.exit(0)
 
     input_data = sys.stdin.readlines()
     nlines = len(input_data)
