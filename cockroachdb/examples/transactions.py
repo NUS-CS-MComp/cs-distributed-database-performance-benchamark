@@ -1,5 +1,4 @@
 from decimal import Decimal
-from multiprocessing import Pool
 
 from cockroachdb.modules.transactions import (
     NewOrderTransaction,
@@ -30,10 +29,12 @@ def run(transaction: BaseTransaction):
 
 
 if __name__ == "__main__":
+    from multiprocessing import Pool
+
     customer = (1, 1, 1)
 
     transactions = [
-        NewOrderTransaction(customer, 3, [1, 3, 5], [1, 1, 1], [1, 1, 1]),
+        NewOrderTransaction(customer, 3, [1, 2, 3], [1, 1, 1], [1, 1, 1]),
         PaymentTransaction(customer, Decimal(99.99)),
         DeliveryTransaction(1, 100),
         OrderStatusTransaction(customer),

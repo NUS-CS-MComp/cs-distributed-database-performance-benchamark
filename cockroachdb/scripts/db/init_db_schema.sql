@@ -85,9 +85,9 @@ CREATE TABLE IF NOT EXISTS "order"
     O_OL_CNT     NUMERIC(2, 0) NOT NULL,
     O_ALL_LOCAL  NUMERIC(1, 0) NOT NULL,
     O_ENTRY_D    TIMESTAMP     NOT NULL,
-    PRIMARY KEY (O_W_ID, O_D_ID, O_C_ID, O_ID),
+    PRIMARY KEY (O_W_ID, O_D_ID, O_ID),
     FOREIGN KEY (O_W_ID, O_D_ID, O_C_ID) REFERENCES customer (C_W_ID, C_D_ID, C_ID),
-    UNIQUE (O_W_ID, O_D_ID, O_ID),
+    UNIQUE (O_W_ID, O_D_ID, O_C_ID, O_ID),
     FAMILY order_txn_info (O_ID, O_W_ID, O_D_ID, O_C_ID, O_CARRIER_ID),
     FAMILY order_meta (O_OL_CNT, O_ALL_LOCAL, O_ENTRY_D)
 );
