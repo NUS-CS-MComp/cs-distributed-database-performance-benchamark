@@ -110,12 +110,15 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 
 
 def populate_related_customers(session, w_id, d_id, c_id, item_number):
-    related_orders = utils.do_query(session, 'SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_I_ID IN %s ALLOW FILTERING',
-                                     (w_id, tuple(item_number)))
-    counter = Counter([(order.ol_w_id, order.ol_d_id, order.ol_o_id) for order in related_orders])
+    # all_warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
+    #warehouses = set([w.w_id for w in all_warehouses]) - set([w_id])
+    print("len of item_number: ", len(item_number))
+    all_orderlines = utils.do_query(session, 'SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line')
+    counter = Counter([(order.ol_w_id, order.ol_d_id, order.ol_o_id) for order in all_orderlines if order.ol_w_id != w_id and order.ol_o_id in item_number])
     related_orders = [order for order in counter if counter[order] > 1]
-    related_customers = utils.do_query(session, 'SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN %s ALLOW FILTERING',
-                                        (tuple(related_orders)))
+    print("len of related orders: ", len(related_orders))
+    related_customers = utils.do_query(session, 'SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN {o} ALLOW FILTERING'.format(o=utils.get_tuple(related_orders)))
+    print("len of related customers: ", len(related_customers))
 
     query = "INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)"
     prepared = session.prepare(query)

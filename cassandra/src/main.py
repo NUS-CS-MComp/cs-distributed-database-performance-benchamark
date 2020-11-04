@@ -39,7 +39,7 @@ if __name__ == '__main__':
     nTX = 0
     l = 0
     # while (l < nlines):
-    while (l < 200):
+    while (l < 200 and l < len(input_data)):
         req = input_data[l].rstrip()
         args = req.split(",")
         start_time = time.time()
