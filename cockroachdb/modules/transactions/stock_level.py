@@ -38,65 +38,35 @@ class StockLevelTransaction(BaseTransaction):
         Execute stock level transaction
         :return: number of items with lower stock quantity than threshold
         """
-        # Retrieve orders from given district
-        order_from_district: Order = (
-            Order.select(
-                Order.warehouse_id.alias("warehouse_id"),
-                Order.district_id.alias("district_id"),
-                Order.id.alias("id"),
-            )
-            .join(
-                District,
-                on=(
-                    (Order.warehouse_id == District.warehouse_id)
-                    & (Order.district_id == District.id)
-                ),
-            )
-            .where(
-                (Order.warehouse_id == self.warehouse_id)
-                & (Order.district_id == self.district_id)
-                & (Order.id >= District.next_order_id - self.order_offset)
-            )
-        )
-
-        # Get distinct order lines
-        order_lines_from_order = (
+        # Retrieve distinct items from last L orders
+        order_lines_from_district = ( 
             OrderLine.select(
                 OrderLine.warehouse_id.alias("warehouse_id"),
                 OrderLine.item_id.alias("item_id"),
             )
-            .distinct()
             .join(
-                order_from_district,
+                District,
                 on=(
-                    (
-                        OrderLine.warehouse_id
-                        == order_from_district.c.warehouse_id
-                    )
-                    & (
-                        OrderLine.district_id
-                        == order_from_district.c.district_id
-                    )
-                    & (OrderLine.order_id == order_from_district.c.id)
+                    (OrderLine.warehouse_id == District.warehouse_id)
+                    & (OrderLine.district_id == District.id)
                 ),
             )
+            .distinct()
             .where(
                 (OrderLine.warehouse_id == self.warehouse_id)
                 & (OrderLine.district_id == self.district_id)
+                & (OrderLine.order_id >= District.next_order_id - self.order_offset)
+                )
             )
-        )
-
+        
         # Get stocks and determine counts of those below threshold
         below_threshold_count = (
             Stock.select(Stock.warehouse_id, Stock.item_id)
             .join(
-                order_lines_from_order,
+                order_lines_from_district,
                 on=(
-                    (
-                        Stock.warehouse_id
-                        == order_lines_from_order.c.warehouse_id
-                    )
-                    & (Stock.item_id == order_lines_from_order.c.item_id)
+                    (Stock.warehouse_id == order_lines_from_district.c.warehouse_id)
+                    & (Stock.item_id == order_lines_from_district.c.item_id)
                 ),
             )
             .where(Stock.quantity <= self.threshold)
