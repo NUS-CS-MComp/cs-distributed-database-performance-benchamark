@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+import threading
 from datetime import datetime
 from transactions import utils
 from collections import Counter
 
 
-def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity):
+def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity, background_rc=True):
     # Step 1
     n = 0
     n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
@@ -32,6 +33,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     total_amount = 0
     item_amount = []
     adjusted_qty = []
+    cql_insert_item_orders = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
     for i in range(num_items):
         # Step 5a
         s_quantity = utils.single_select(session, 'SELECT S_QUANTITY FROM stock WHERE S_W_ID = %s AND S_I_ID = %s',
@@ -76,6 +78,8 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
             ''',
             (n, d_id, w_id, i, item_number[i], supplier_warehouse[i], quantity[i], item_amount[i], dist_info)
         )
+        # Populate the item_orders table for each item-order pair
+        utils.do_query(session, cql_insert_item_orders, (w_id, item_number[i], n, d_id, c_id))
     
     # Step 6
     w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
@@ -83,7 +87,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     c_discount = utils.single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 
-    populate_related_customers(session, w_id, d_id, c_id, item_number)
+    if background_rc:
+        threading.Thread(target=populate_related_customers, args=(session, w_id, d_id, c_id, item_number)).start()
+    else:
+        populate_related_customers(session, w_id, d_id, c_id, item_number)
 
     # Output
     output = {}
@@ -110,21 +117,34 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 
 
 def populate_related_customers(session, w_id, d_id, c_id, item_number):
-    # all_warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
-    #warehouses = set([w.w_id for w in all_warehouses]) - set([w_id])
-    print("len of item_number: ", len(item_number))
-    all_orderlines = utils.do_query(session, 'SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line')
-    counter = Counter([(order.ol_w_id, order.ol_d_id, order.ol_o_id) for order in all_orderlines if order.ol_w_id != w_id and order.ol_o_id in item_number])
-    related_orders = [order for order in counter if counter[order] > 1]
-    print("len of related orders: ", len(related_orders))
-    related_customers = utils.do_query(session, 'SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN {o} ALLOW FILTERING'.format(o=utils.get_tuple(related_orders)))
-    print("len of related customers: ", len(related_customers))
+    all_warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
+    warehouses = set([w.w_id for w in all_warehouses]) - set([w_id])
+    print("len of warehouses: ", len(warehouses))
+    threads, customers = [], []
+    cql_get = session.prepare("SELECT C_ID, D_ID FROM item_orders WHERE W_ID = ? AND I_ID IN ?")
+    cql_insert = session.prepare("INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)")
+    for other_w in warehouses:
+        t = threading.Thread(target=get_customers_from_warehouse, args=(session, cql_get, cql_insert, w_id, d_id, c_id, other_w, item_number))
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
 
-    query = "INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)"
-    prepared = session.prepare(query)
-    futures = []
+
+def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id, other_w, item_number):
+    customers = utils.do_query(session, cql_get, (other_w, utils.get_tuple(item_number)))
+    print("len of relevant customers in warehouse: ", other_w, len(customers))
+    counter = Counter([(c.c_id, c.d_id) for c in customers])
+    related_customers = [c for c in counter if counter[c] > 1]
+    print("len of related customers in warehouse: ", other_w, len(related_customers))
+
+    threads = []
     for rc in related_customers:
-        futures.append(session.execute_async(prepared, (w_id, d_id, c_id, rc.o_w_id, rc.o_d_id, rc.o_c_id)))
-        futures.append(session.execute_async(prepared, (rc.o_w_id, rc.o_d_id, rc.o_c_id, w_id, d_id, c_id)))
-    for f in futures:
-        f.result()
+        t1 = threading.Thread(target=utils.do_query, args=(session, cql_insert, (w_id, d_id, c_id, other_w, rc.d_id, rc.c_id)))
+        t2 = threading.Thread(target=utils.do_query, args=(session, cql_insert, (other_w, rc.d_id, rc.c_id, w_id, d_id, c_id)))
+        threads.append(t1)
+        threads.append(t2)
+        t1.start()
+        t2.start()
+    for t in threads:
+        t.join()

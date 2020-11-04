@@ -238,3 +238,13 @@ CREATE TABLE related_customers (
     R_D_ID            int,
     PRIMARY KEY ((C_W_ID, C_D_ID, C_ID), R_ID)
 );
+
+DROP TABLE IF EXISTS item_orders;
+CREATE TABLE item_orders (
+    W_ID              int,
+    I_ID              int,
+    O_ID              counter,
+    D_ID              int,
+    C_ID              int,
+    PRIMARY KEY (W_ID, I_ID, O_ID, D_ID)
+);
