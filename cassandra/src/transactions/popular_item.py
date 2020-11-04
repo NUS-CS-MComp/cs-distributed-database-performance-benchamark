@@ -15,7 +15,7 @@ def popular_item(session, warehouse, district, limit):
     orders = session.execute(cql_get_orders.format(w=warehouse, d=district, l=limit))
     order_ids = [order.o_id for order in orders]
     customer_ids = [order.o_c_id for order in orders]
-    ols = session.execute(cql_get_ols.format(w=warehouse, d=district, o=get_tuple(tuple(order_ids))))
+    ols = session.execute(cql_get_ols.format(w=warehouse, d=district, o=get_tuple(order_ids)))
     customers = session.execute(cql_get_customer_names.format(w=warehouse, d=district, c=get_tuple(tuple(customer_ids))))
 
     all_popular_item_ids = set()
@@ -35,7 +35,7 @@ def popular_item(session, warehouse, district, limit):
         for id in popular_items_in_order:
             item_occurance[id] += 1
 
-    items = [item for item in session.execute(cql_get_items.format(i=get_tuple(tuple(all_popular_item_ids))))]
+    items = [item for item in session.execute(cql_get_items.format(i=get_tuple(all_popular_item_ids)))]
     item_by_id = {}
     for item in items:
         item_by_id[item.i_id] = item

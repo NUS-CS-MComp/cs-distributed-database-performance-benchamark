@@ -4,7 +4,7 @@ from transactions import utils
 from collections import Counter
 
 
-def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity, run_rc=True):
+def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity):
     # Step 1
     n = 0
     n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
@@ -83,8 +83,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     c_discount = utils.single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 
-    if run_rc:
-        populate_related_customers(session, w_id, d_id, c_id, item_number)
+    populate_related_customers(session, w_id, d_id, c_id, item_number)
 
     # Output
     output = {}
@@ -113,7 +112,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 def populate_related_customers(session, w_id, d_id, c_id, item_number):
     related_orders = utils.do_query(session, 'SELECT OL_W_ID, OL_D_ID, OL_O_ID FROM order_line WHERE OL_W_ID != %s AND OL_I_ID IN %s ALLOW FILTERING',
                                      (w_id, tuple(item_number)))
-    counter = Counter([(order.OL_W_ID, order.OL_D_ID, order.OL_O_ID) for order in related_orders])
+    counter = Counter([(order.ol_w_id, order.ol_d_id, order.ol_o_id) for order in related_orders])
     related_orders = [order for order in counter if counter[order] > 1]
     related_customers = utils.do_query(session, 'SELECT DISTINCT O_W_ID, O_D_ID, O_C_ID FROM orders WHERE (O_W_ID, O_D_ID, O_ID) IN %s ALLOW FILTERING',
                                         (tuple(related_orders)))
@@ -122,7 +121,7 @@ def populate_related_customers(session, w_id, d_id, c_id, item_number):
     prepared = session.prepare(query)
     futures = []
     for rc in related_customers:
-        futures.append(session.execute_async(prepared, (w_id, d_id, c_id, rc.O_W_ID, rc.O_D_ID, rc.O_C_ID)))
-        futures.append(session.execute_async(prepared, (rc.O_W_ID, rc.O_D_ID, rc.O_C_ID, w_id, d_id, c_id)))
+        futures.append(session.execute_async(prepared, (w_id, d_id, c_id, rc.o_w_id, rc.o_d_id, rc.o_c_id)))
+        futures.append(session.execute_async(prepared, (rc.o_w_id, rc.o_d_id, rc.o_c_id, w_id, d_id, c_id)))
     for f in futures:
         f.result()
