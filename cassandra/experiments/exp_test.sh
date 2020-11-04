@@ -3,7 +3,7 @@ SCRIPT_PATH="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cas
 XACT_FILE_DIR="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/project-files/xact-files/"
 OUTPUT_FILE_DIR="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/project-files/output-files/"
 
-for i in {2..40..5}
+for i in {1..20..5}
 do
-    python3 ${SCRIPT_PATH} QUORUM < ${XACT_FILE_DIR}$i.txt | sed "s/^/3,$i,/" > ${OUTPUT_FILE_DIR}exp3-cli$i &
+    python3 ${SCRIPT_PATH} QUORUM < ${XACT_FILE_DIR}zach.txt | sed "s/^/Z,$i,/" > ${OUTPUT_FILE_DIR}expZ-cli$i &
 done

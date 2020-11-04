@@ -49,7 +49,6 @@ if __name__ == '__main__':
 
     while (l < nlines):
         req = input_data[l].rstrip()
-        print(counter, req)
         args = req.split(",")
         start_time = time.time()
         if args[0] == "N":
@@ -91,16 +90,18 @@ if __name__ == '__main__':
             output = related_customer(session, *args[1:])
         else:
             raise Exception("Invalid transaction type: %s" % args[0])
-        #print(output)
+
         latency.append(time.time() - start_time)
         nTX += 1
         l += 1
 
-        counter += 1
-        if counter % 100 == 0:
-            elapsed = time.time() - epoc
-            throughput = counter * 1.0 / elapsed
-            print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
+        #print(counter, req)
+        #print(output)
+        #counter += 1
+        #if counter % 100 == 0:
+        #    elapsed = time.time() - epoc
+        #    throughput = counter * 1.0 / elapsed
+        #    print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
     
     df = pd.Series(latency)
     result = {}

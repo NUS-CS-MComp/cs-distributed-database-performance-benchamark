@@ -1,7 +1,6 @@
 from multiprocessing.pool import ThreadPool
 from functools import partial
 from collections import defaultdict
-import threading
 import time
 
 from transactions.new_order import populate_related_customers
@@ -37,4 +36,3 @@ def preprocess_related_customer(session):
     start_time = time.time()
     cql = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
     pool.map(partial(work, session, cql, bucket), orders)
-
