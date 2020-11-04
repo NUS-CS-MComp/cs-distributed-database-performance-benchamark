@@ -1,30 +1,46 @@
 from multiprocessing.pool import ThreadPool
 from functools import partial
+from collections import defaultdict
 import threading
+import time
 
 from transactions.new_order import populate_related_customers
 from transactions.utils import *
 
+counter = 0
+start_time = 0
 
-def work(order, session):
-    print("preprocessing order", order.o_id)
-    order_lines = session.execute('SELECT OL_I_ID FROM order_line WHERE OL_W_ID = %s AND OL_D_ID = %s AND OL_O_ID = %s',
-                            (order.o_w_id, order.o_d_id, order.o_id))
-    ol = [o for o in order_lines]
-    cql_insert_item_orders = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
-    threads = []
-    for o in ol:
-        # Populate the item_orders table for each item-order pair
-        t = threading.Thread(target=do_query,
-                             args=(session, cql_insert_item_orders, (order.o_w_id, o.ol_i_id, o.o_id, o.o_d_id, o.o_c_id)))
-        threads.append(t)
-        t.start()
-    for t in threads:
-        t.join()
-    populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, [o.ol_i_id for o in ol])
+def work(session, cql, bucket, order):
+    global counter
+    global start_time
+    for i in bucket[order.o_id]:
+        do_query(session, cql, (order.o_w_id, i, order.o_id, order.o_d_id, order.o_c_id), 'write')
+    print("item-order table populated")
+    populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, bucket[order.o_id])
+    print("related-customer calculated")
+    counter += 1
+    if counter % 100 == 0:
+        batch_time = time.time()
+        elapsed = batch_time - start_time
+        throughput = counter * 1.0 / elapsed
+        print("number of preproced orders: ", counter)
+        print("throughput: %s orders per second" % ("{:.2f}".format(throughput)))
 
 
 def preprocess_related_customer(session):
+    global start_time
+    bucket = defaultdict(list)
+    tasks = []
     orders = session.execute('SELECT O_W_ID, O_D_ID, O_ID, O_C_ID FROM orders')
-    pool = ThreadPool(256)
-    pool.map(partial(work, session=session), orders)
+    order_lines = session.execute('SELECT OL_O_ID, OL_I_ID FROM order_line')
+    orders = [o for o in orders]
+    order_lines = [ol for ol in order_lines]
+    print("All order and order lines acquired")
+    for ol in order_lines:
+        bucket[ol.ol_o_id].append(ol.ol_i_id)
+    print("order lines grouped")
+    pool = ThreadPool(4)
+    start_time = time.time()
+    cql = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
+    pool.map(partial(work, session, cql, bucket), orders)
+

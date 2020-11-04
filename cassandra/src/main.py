@@ -27,13 +27,13 @@ if __name__ == '__main__':
         read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
         write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
         exec_profile = {'read': read_profile, 'write': write_profile}
-    elif sys.argv[1] != 'preprocess':
+    else:
         sys.exit('Argument not valid! (consistency level required)')
 
     cluster = Cluster(['127.0.0.1'], port=6042, execution_profiles=exec_profile)
     session = cluster.connect('cs5424')
 
-    if sys.argv[1] == 'preprocess':
+    if len(sys.argv) == 3 and sys.argv[2] == 'preprocess':
         preprocess_related_customer(session)
         sys.exit(0)
 
