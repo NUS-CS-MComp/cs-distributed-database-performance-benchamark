@@ -12,6 +12,7 @@ from transactions.stock_level import *
 from transactions.popular_item import *
 from transactions.top_balance import *
 from transactions.related_customer import *
+from preprocess import *
 
 
 if __name__ == '__main__':
@@ -26,11 +27,15 @@ if __name__ == '__main__':
         read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
         write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
         exec_profile = {'read': read_profile, 'write': write_profile}
-    else:
+    elif sys.argv[1] != 'preprocess':
         sys.exit('Argument not valid! (consistency level required)')
 
     cluster = Cluster(['127.0.0.1'], port=6042, execution_profiles=exec_profile)
     session = cluster.connect('cs5424')
+
+    if sys.argv[1] == 'preprocess':
+        preprocess_related_customer(session)
+        return
 
     input_data = sys.stdin.readlines()
     nlines = len(input_data)

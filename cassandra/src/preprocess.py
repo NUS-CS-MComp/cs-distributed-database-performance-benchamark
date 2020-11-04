@@ -7,6 +7,7 @@ from transactions.utils import *
 
 
 def work(order, session):
+    print("preprocessing order", order.o_id)
     order_lines = session.execute('SELECT OL_I_ID FROM order_line WHERE OL_W_ID = %s AND OL_D_ID = %s AND OL_O_ID = %s',
                             (order.o_w_id, order.o_d_id, order.o_id))
     ol = [o for o in order_lines]
