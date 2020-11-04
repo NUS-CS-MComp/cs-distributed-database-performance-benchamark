@@ -22,14 +22,17 @@ def popular_item(session, warehouse, district, limit):
     all_popular_item_ids = set()
     ols_by_order = defaultdict(list)
     popular_items_by_order = defaultdict(list)
-    customers_by_id = defaultdict(list)
+    customers_by_id = {}
     item_occurance = defaultdict(int)
     for ol in ols:
         ols_by_order[ol.ol_o_id].append(ol)
     for customer in customers:
-        customers_by_id[customer.c_id].append(customer)
+        customers_by_id[customer.c_id] = customer
     for id in order_ids:
-        max_quantity = max([ol.ol_quantity for ol in ols_by_order[id]])
+        quantities = defaultdict(int)
+        for ol in ols_by_order[id]:
+            quantities[ol.ol_i_id] += ol.ol_quantity
+        max_quantity = max([value for _, value in quantities.items()])
         popular_items_in_order = [ol.ol_i_id for ol in ols_by_order[id] if ol.ol_quantity == max_quantity]
         popular_items_by_order[id] = (popular_items_in_order, max_quantity)
         all_popular_item_ids.update(popular_items_in_order)
@@ -44,14 +47,14 @@ def popular_item(session, warehouse, district, limit):
     result = {'identifier': (warehouse, district), 'number': limit, 'orders': [], 'popular_items': []}
     for order in orders:
         customer = customers_by_id[order.o_c_id]
+        popular_items, quantity = popular_items_by_order[order.o_id]
         entry = {'O_ID': order.o_id,
                  'O_ENTRY_D': order.o_entry_d,
                  'C_FIRST': customer.c_first,
                  'C_MIDDLE': customer.c_middle,
                  'C_LAST': customer.c_last,
-                 'popular_items': [{'name': item_by_id[item_id].i_name, 'quantity': max}
-                                    for ids, max in popular_items_by_order[order.o_id]
-                                    for item_id in ids]}
+                 'popular_items': [{'name': item_by_id[item_id].i_name, 'quantity': quantity}
+                                    for item_id in popular_items]}
         result['orders'].append(entry)
     for id in all_popular_item_ids:
         entry = {'name': item_by_id[id].i_name,
