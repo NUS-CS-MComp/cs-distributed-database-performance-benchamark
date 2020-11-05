@@ -6,10 +6,10 @@ WITH replication = {
 
 USE cs5424;
 
-COPY related_customers [(C_ID, C_W_ID, C_D_ID, R_ID, R_W_ID, R_D_ID)]
-TO '~/cs5424-distributed-database-group-project/cassandra/project-files/preprocessed-data-files/related_customers.csv'
+COPY related_customers (C_ID, C_W_ID, C_D_ID, R_ID, R_W_ID, R_D_ID)
+TO '/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/project-files/preprocessed-data-files/related_customers.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
 
-COPY item_orders [(W_ID, I_ID, O_ID, D_ID, C_ID)]
-TO '~/cs5424-distributed-database-group-project/cassandra/project-files/preprocessed-data-files/item_orders.csv'
+COPY item_orders (W_ID, I_ID, O_ID, D_ID, C_ID)
+TO '/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/project-files/preprocessed-data-files/item_orders.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
