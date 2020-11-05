@@ -13,6 +13,7 @@ from transactions.popular_item import *
 from transactions.top_balance import *
 from transactions.related_customer import *
 from preprocess import *
+from multiprocessing import Pool
 
 
 if __name__ == '__main__':
@@ -47,6 +48,8 @@ if __name__ == '__main__':
     epoc = time.time()
     counter = 0
 
+    pool = Pool(16)
+
     while (l < nlines):
         req = input_data[l].rstrip()
         args = req.split(",")
@@ -63,7 +66,8 @@ if __name__ == '__main__':
                 item_number.append(int(args[0]))
                 supplier_warehouse.append(int(args[1]))
                 quantity.append(int(args[2]))
-            output = new_order(session, w_id, d_id, c_id, m, item_number, supplier_warehouse, quantity, background_rc=True)
+            output = new_order(session, w_id, d_id, c_id, m, item_number, supplier_warehouse, quantity)
+            pool.async_apply(populate_related_customers, (session, w_id, d_id, c_id, item_number))
             l += m
         elif args[0] == "P":
             c_w_id = int(args[1])
@@ -101,8 +105,11 @@ if __name__ == '__main__':
         if counter % 100 == 0:
             elapsed = time.time() - epoc
             throughput = counter * 1.0 / elapsed
+            print("number of processed transactions: ", counter)
             print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
-    
+
+    pool.close()
+
     df = pd.Series(latency)
     result = {}
     result['nTXs'] = nTX

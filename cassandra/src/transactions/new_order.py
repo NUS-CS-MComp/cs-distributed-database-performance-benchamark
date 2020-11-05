@@ -10,7 +10,7 @@ from collections import Counter
 all_warehouse = []
 
 
-def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity, background_rc=True):
+def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity):
     # Step 1
     n = 0
     n = utils.single_select(session, 'SELECT D_O_ID_OFST from district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))
@@ -98,10 +98,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     c_discount = utils.single_select(session, 'SELECT C_DISCOUNT FROM customer WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (w_id, d_id, c_id))
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 
-    if background_rc:
-        Process(target=populate_related_customers, args=(session, w_id, d_id, c_id, item_number)).start()
-    else:
-        populate_related_customers(session, w_id, d_id, c_id, item_number)
+    # if background_rc:
+    #     Process(target=populate_related_customers, args=(session, w_id, d_id, c_id, item_number)).start()
+    # else:
+    #     populate_related_customers(session, w_id, d_id, c_id, item_number)
 
     # Output
     output = {}
