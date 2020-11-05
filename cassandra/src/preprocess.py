@@ -10,9 +10,6 @@ from transactions.utils import *
 counter = 0
 start_time = 0
 
-interval1 = 0
-interval2 = 0
-
 
 def work(session, cql, bucket, order):
     global counter
@@ -22,11 +19,7 @@ def work(session, cql, bucket, order):
     time1 = time.time()
     for i in bucket[(order.o_w_id, order.o_d_id, order.o_id)]:
         do_query(session, cql, (order.o_w_id, i, order.o_id, order.o_d_id, order.o_c_id), 'write')
-    time2 = time.time()
-    populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, bucket[order.o_id])
-    time3 = time.time()
-    interval1 += time2 - time1
-    interval2 += time3 - time2
+    #populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, bucket[order.o_id])
     counter += 1
     if counter % 100 == 0:
         batch_time = time.time()
@@ -34,9 +27,6 @@ def work(session, cql, bucket, order):
         throughput = counter * 1.0 / elapsed
         print("number of preprocessed orders: ", counter)
         print("throughput: %s orders per second" % ("{:.2f}".format(throughput)))
-        print("INSERT item_orders: %s orders per second" % ("{:.2f}".format(counter * 1.0 / interval1)))
-        print("Calculate related_customers: %s orders per second" % ("{:.2f}".format(counter * 1.0 / interval2)))
-        print("Combined throughput: %s orders per second" % ("{:.2f}".format(counter * 1.0 / (interval1 + interval2))))
 
 
 def preprocess_related_customer(session):

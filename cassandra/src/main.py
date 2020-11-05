@@ -98,7 +98,7 @@ if __name__ == '__main__':
         #print(counter, req)
         #print(output)
         counter += 1
-        if counter % 1000 == 0:
+        if counter % 100 == 0:
             elapsed = time.time() - epoc
             throughput = counter * 1.0 / elapsed
             print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
