@@ -19,7 +19,7 @@ def work(session, cql, bucket, order):
     time1 = time.time()
     for i in bucket[(order.o_w_id, order.o_d_id, order.o_id)]:
         do_query(session, cql, (order.o_w_id, i, order.o_id, order.o_d_id, order.o_c_id), 'write')
-    #populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, bucket[order.o_id])
+    populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, bucket[(order.o_w_id, order.o_d_id, order.o_id)])
     counter += 1
     if counter % 100 == 0:
         batch_time = time.time()

@@ -1,7 +1,9 @@
 .vscode/
 
+cassandra/*.zip
 client/experiments/outputs
-cassandra/project-files/
+cassandra/project-files/data-files/
+cassandra/project-files/xact-files/
 cockroachdb/scripts/bin
 cockroachdb/scripts/**/store
 cockroachdb/scripts/**/certs*
