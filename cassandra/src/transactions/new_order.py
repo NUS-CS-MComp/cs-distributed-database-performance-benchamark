@@ -26,13 +26,6 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
             all_local = 0
             break
     current_datetime = datetime.now()
-    utils.do_query(session, 
-        '''
-        INSERT INTO orders (O_ID, O_D_ID, O_W_ID, O_C_ID, O_ENTRY_D, O_CARRIER_ID, O_OL_CNT, O_ALL_LOCAL)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ''',
-        (n, d_id, w_id, c_id, datetime.now(), None, num_items, all_local)
-    )
 
     # Step 4 & 5
     total_amount = 0
@@ -92,6 +85,15 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     pool.map(handle_item, range(num_items))
     pool.close()
     
+    # Create order after creating all order-lines, so that when querying for popular items there will be no error
+    utils.do_query(session, 
+        '''
+        INSERT INTO orders (O_ID, O_D_ID, O_W_ID, O_C_ID, O_ENTRY_D, O_CARRIER_ID, O_OL_CNT, O_ALL_LOCAL)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ''',
+        (n, d_id, w_id, c_id, datetime.now(), None, num_items, all_local)
+    )
+
     # Step 6
     w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
     d_tax = utils.single_select(session, 'SELECT D_TAX FROM district WHERE D_W_ID = %s AND D_ID = %s', (w_id, d_id))

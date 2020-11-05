@@ -48,7 +48,7 @@ if __name__ == '__main__':
     epoc = time.time()
     counter = 0
 
-    pool = Pool(16)
+    pool = Pool(4)
 
     while (l < nlines):
         req = input_data[l].rstrip()
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 supplier_warehouse.append(int(args[1]))
                 quantity.append(int(args[2]))
             output = new_order(session, w_id, d_id, c_id, m, item_number, supplier_warehouse, quantity)
-            pool.async_apply(populate_related_customers, (session, w_id, d_id, c_id, item_number))
+            pool.apply_async(populate_related_customers, (session, w_id, d_id, c_id, item_number))
             l += m
         elif args[0] == "P":
             c_w_id = int(args[1])
@@ -101,12 +101,12 @@ if __name__ == '__main__':
 
         #print(counter, req)
         #print(output)
-        counter += 1
-        if counter % 100 == 0:
-            elapsed = time.time() - epoc
-            throughput = counter * 1.0 / elapsed
-            print("number of processed transactions: ", counter)
-            print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
+        #counter += 1
+        #if counter % 100 == 0:
+        #    elapsed = time.time() - epoc
+        #    throughput = counter * 1.0 / elapsed
+        #    print("number of processed transactions: ", counter)
+        #    print("throughput: %s transactions per second" % ("{:.2f}".format(throughput)))
 
     pool.close()
 
