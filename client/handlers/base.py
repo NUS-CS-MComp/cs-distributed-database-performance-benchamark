@@ -98,10 +98,10 @@ class BaseSingleClientHandler(ABC):
             f"Total number of transactions processed: {self.num_of_transactions}",
             f"Total elapsed time: {format_float(self.elapsed_time)}s",
             f"Transaction throughput: {format_float(self.throughput)}",
-            f"Average transaction latency: {format_float(self.avg_latency)}s",
-            f"Median transaction latency: {format_float(self.median_latency)}s",
-            f"95th percentile transaction latency: {format_float(self.latency_95_pct)}s",
-            f"99th percentile transaction latency: {format_float(self.latency_99_pct)}s",
+            f"Average transaction latency: {format_float(self.avg_latency)}ms",
+            f"Median transaction latency: {format_float(self.median_latency)}ms",
+            f"95th percentile transaction latency: {format_float(self.latency_95_pct)}ms",
+            f"99th percentile transaction latency: {format_float(self.latency_99_pct)}ms",
         ]
         error_console.print("\n".join(print_lines))
 
