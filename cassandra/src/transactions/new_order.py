@@ -126,10 +126,10 @@ def populate_related_customers(session, w_id, d_id, c_id, item_number):
     threads = []
     cql_get = session.prepare("SELECT C_ID, D_ID FROM item_orders WHERE W_ID = ? AND I_ID IN ?")
     cql_insert = session.prepare("INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)")
-    for w in all_warehouses:
-        if w.w_id == w_id:
+    for w in all_warehouse:
+        if w == w_id:
             continue
-        t = threading.Thread(target=get_customers_from_warehouse, args=(session, cql_get, cql_insert, w_id, d_id, c_id, w.w_id, item_number))
+        t = threading.Thread(target=get_customers_from_warehouse, args=(session, cql_get, cql_insert, w_id, d_id, c_id, w, item_number))
         threads.append(t)
         t.start()
     for t in threads:
