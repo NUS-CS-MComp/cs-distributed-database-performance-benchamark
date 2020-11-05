@@ -4,6 +4,8 @@ from datetime import datetime
 from transactions import utils
 from collections import Counter
 
+all_warehouse = []
+
 
 def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_warehouse, quantity, background_rc=True):
     # Step 1
@@ -117,7 +119,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 
 
 def populate_related_customers(session, w_id, d_id, c_id, item_number):
-    all_warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
+    global all_warehouse
+    if len(all_warehouse) == 0:
+        warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
+        all_warehouse = [w.w_id for w in warehouses]
     threads = []
     cql_get = session.prepare("SELECT C_ID, D_ID FROM item_orders WHERE W_ID = ? AND I_ID IN ?")
     cql_insert = session.prepare("INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)")
@@ -140,4 +145,3 @@ def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id,
     for rc in related_customers:
         utils.do_query(session, cql_insert, (w_id, d_id, c_id, other_w, rc[1], rc[0]), 'write')
         utils.do_query(session, cql_insert, (other_w, rc[1], rc[0], w_id, d_id, c_id), 'write')
-
