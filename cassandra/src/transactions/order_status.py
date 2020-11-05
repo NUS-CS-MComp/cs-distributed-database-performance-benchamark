@@ -14,7 +14,7 @@ def order_status(session, c_w_id, c_d_id, c_id):
         output['c_balance'] = row.c_balance
         break
 
-    rows = utils.do_query(session, 'SELECT O_ID, O_ENTRY_D, O_CARRIER_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s LIMIT 1', (c_w_id, c_d_id))  # max O_ID
+    rows = utils.do_query(session, 'SELECT O_ID, O_ENTRY_D, O_CARRIER_ID FROM customer_orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_C_ID = %s LIMIT 1', (c_w_id, c_d_id, c_id))  # max O_ID
     for row in rows:
         output['o_id'] = row[0]
         output['o_entry_d'] = row.o_entry_d

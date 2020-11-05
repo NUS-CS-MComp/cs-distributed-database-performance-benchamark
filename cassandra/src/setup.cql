@@ -145,6 +145,7 @@ CREATE TABLE customer_counters (
     PRIMARY KEY ((C_W_ID, C_D_ID), C_ID)
 );
 
+DROP MATERIALIZED VIEW IF EXISTS customer_orders;
 DROP TABLE IF EXISTS orders;    -- `order' cannot be used as table's name in Cassandra
 CREATE TABLE orders (
     O_W_ID          int,
@@ -161,6 +162,14 @@ WITH CLUSTERING ORDER BY (O_ID DESC);
 COPY orders (O_W_ID, O_D_ID, O_ID, O_C_ID, O_CARRIER_ID, O_OL_CNT, O_ALL_LOCAL, O_ENTRY_D)
 FROM '~/cs5424-distributed-database-group-project/cassandra/project-files/data-files/order.csv'
 WITH DELIMITER=',' AND HEADER=FALSE;
+
+DROP MATERIALIZED VIEW IF EXISTS customer_orders;
+CREATE MATERIALIZED VIEW customer_orders
+AS SELECT O_W_ID, O_D_ID, O_C_ID, O_ID, O_ENTRY_D, O_CARRIER_ID
+FROM orders
+WHERE O_W_ID IS NOT NULL AND O_D_ID IS NOT NULL AND O_C_ID IS NOT NULL AND O_ID IS NOT NULL
+PRIMARY KEY ((O_W_ID, O_D_ID, O_C_ID), O_ID)
+WITH CLUSTERING ORDER BY (O_ID DESC);
 
 DROP TABLE IF EXISTS item;
 CREATE TABLE item (
