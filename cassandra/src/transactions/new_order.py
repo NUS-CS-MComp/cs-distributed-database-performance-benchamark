@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from multiprocessing.pool import ThreadPool
+from multiprocessing import Pool
 from multiprocessing import Process
 import threading
 from datetime import datetime
@@ -88,9 +89,11 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         # Populate the item_orders table for each item-order pair
         utils.do_query(session, cql_insert_item_orders, (w_id, item_number[i], n, d_id, c_id), query_type='write')
 
-    pool = ThreadPool(4)
-    pool.map(handle_item, range(num_items))
-    pool.close()
+    # pool = ThreadPool(4)
+    # pool.map(handle_item, range(num_items))
+    # pool.close()
+    with Pool(4) as p:
+        p.map(handle_item, range(num_items))
     
     # Step 6
     w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
