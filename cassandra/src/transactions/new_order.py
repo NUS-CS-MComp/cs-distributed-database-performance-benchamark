@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from multiprocessing.pool import ThreadPool
+from multiprocessing import Process
 import threading
 from datetime import datetime
 from transactions import utils
@@ -98,7 +99,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     total_amount *= (1 + d_tax + w_tax) * (1 - c_discount)
 
     if background_rc:
-        threading.Thread(target=populate_related_customers, args=(session, w_id, d_id, c_id, item_number)).start()
+        Process(target=populate_related_customers, args=(session, w_id, d_id, c_id, item_number)).start()
     else:
         populate_related_customers(session, w_id, d_id, c_id, item_number)
 
