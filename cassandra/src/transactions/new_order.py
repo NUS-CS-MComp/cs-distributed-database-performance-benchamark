@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+from multiprocessing.pool import ThreadPool
 import threading
 from datetime import datetime
 from transactions import utils
 from collections import Counter
+
 
 all_warehouse = []
 
@@ -33,15 +35,17 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
 
     # Step 4 & 5
     total_amount = 0
-    item_amount = []
-    adjusted_qty = []
+    item_amount = [0] * num_items
+    adjusted_qty = [0] * num_items
     cql_insert_item_orders = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
-    for i in range(num_items):
+
+    def handle_item(i):
+        nonlocal total_amount
         # Step 5a
         s_quantity = utils.single_select(session, 'SELECT S_QUANTITY FROM stock WHERE S_W_ID = %s AND S_I_ID = %s',
             (supplier_warehouse[i], item_number[i]))
         # Step 5b
-        adjusted_qty.append(s_quantity - quantity[i])
+        adjusted_qty[i] = s_quantity - quantity[i]
         # Step 5c
         if adjusted_qty[i] < 10:
             adjusted_qty[i] += 100
@@ -67,7 +71,7 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
             )
         # Step 5e
         i_price = utils.single_select(session, 'SELECT I_PRICE FROM item WHERE I_ID = %s', (item_number[i],))
-        item_amount.append(quantity[i] * i_price)
+        item_amount[i] = quantity[i] * i_price
         # Step 5f
         total_amount += item_amount[i]
         # Step 5g
@@ -82,6 +86,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         )
         # Populate the item_orders table for each item-order pair
         utils.do_query(session, cql_insert_item_orders, (w_id, item_number[i], n, d_id, c_id), query_type='write')
+
+    pool = ThreadPool(4)
+    pool.map(handle_item, range(num_items))
+    pool.close()
     
     # Step 6
     w_tax = utils.single_select(session, 'SELECT W_TAX FROM warehouse WHERE W_ID = %s', (w_id,))
@@ -123,17 +131,12 @@ def populate_related_customers(session, w_id, d_id, c_id, item_number):
     if len(all_warehouse) == 0:
         warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
         all_warehouse = [w.w_id for w in warehouses]
-    threads = []
     cql_get = session.prepare("SELECT C_ID, D_ID FROM item_orders WHERE W_ID = ? AND I_ID IN ?")
     cql_insert = session.prepare("INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)")
     for w in all_warehouse:
         if w == w_id:
             continue
-        t = threading.Thread(target=get_customers_from_warehouse, args=(session, cql_get, cql_insert, w_id, d_id, c_id, w, item_number))
-        threads.append(t)
-        t.start()
-    for t in threads:
-        t.join()
+        get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id, w, item_number)
 
 
 def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id, other_w, item_number):
@@ -145,3 +148,4 @@ def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id,
     for rc in related_customers:
         utils.do_query(session, cql_insert, (w_id, d_id, c_id, other_w, rc[1], rc[0]), 'write')
         utils.do_query(session, cql_insert, (other_w, rc[1], rc[0], w_id, d_id, c_id), 'write')
+

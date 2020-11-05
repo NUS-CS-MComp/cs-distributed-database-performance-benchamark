@@ -25,28 +25,32 @@ def work(session, cql, bucket, order):
     time2 = time.time()
     populate_related_customers(session, order.o_w_id, order.o_d_id, order.o_c_id, bucket[order.o_id])
     time3 = time.time()
-    counter += 1
     interval1 += time2 - time1
     interval2 += time3 - time2
+    counter += 1
     if counter % 100 == 0:
         batch_time = time.time()
         elapsed = batch_time - start_time
         throughput = counter * 1.0 / elapsed
         print("number of preprocessed orders: ", counter)
         print("throughput: %s orders per second" % ("{:.2f}".format(throughput)))
-        print("INSERT item_orders: %s orders per second" % ("{:.2f}".format(counter / interval1)))
-        print("Calculate related_customers: %s orders per second" % ("{:.2f}".format(counter / interval2)))
+        print("INSERT item_orders: %s orders per second" % ("{:.2f}".format(counter * 1.0 / interval1)))
+        print("Calculate related_customers: %s orders per second" % ("{:.2f}".format(counter * 1.0 / interval2)))
+        print("Combined throughput: %s orders per second" % ("{:.2f}".format(counter * 1.0 / (interval1 + interval2))))
 
 
 def preprocess_related_customer(session):
     global start_time
     bucket = defaultdict(list)
+    time1 = time.time()
     orders = session.execute('SELECT O_W_ID, O_D_ID, O_ID, O_C_ID FROM orders')
     order_lines = session.execute('SELECT OL_W_ID, OL_D_ID, OL_O_ID, OL_I_ID FROM order_line')
     for ol in order_lines:
         bucket[(ol.ol_w_id, ol.ol_d_id, ol.ol_o_id)].append(ol.ol_i_id)
-    print("order lines grouped")
+    time2 = time.time()
+    print("Time to fetch all order lines: %s seconds" % ("{:.2f}".format(time2 - time1)))
     pool = ThreadPool(16)
     start_time = time.time()
     cql = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
     pool.map(partial(work, session, cql, bucket), orders)
+
