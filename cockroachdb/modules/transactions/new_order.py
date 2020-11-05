@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import List, Tuple, TypedDict
 
@@ -150,6 +151,7 @@ class NewOrderTransaction(BaseTransaction):
                     for item in self.items
                 )
             ),
+            entry_date=datetime.utcnow(),
         )
 
         District.update(next_order_id=District.next_order_id + 1).where(
