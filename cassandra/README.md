@@ -87,9 +87,9 @@ sh /cassandra-root/experiments/cat_all.sh
 ```
 Merge throughput statistics of each experiment
 ```bash
-python3 /cassandra-root/src/stats/throughputs.py /cassandra-root/project-files/output-files/final_result.csv
+python3 /cassandra-root/src/stats/throughputs.py /cassandra-root/project-files/output-files/clients.csv
 ```
 Merge database states
 ```bash
-# TODO: not implemented
+sh /cassandra-root/src/stats/cat_db_state.sh
 ```
