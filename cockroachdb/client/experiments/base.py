@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from statistics import mean
 from typing import List, Optional, Any, Tuple
 
-from client.experiments.output_writer import ExperimentOutputWriter
-from client.handlers.base import BaseSingleClientHandler
+from cockroachdb.client.experiments.output_writer import ExperimentOutputWriter
+from cockroachdb.client.handlers.base import BaseSingleClientHandler
 
 
 class BaseExperiment(ABC):
@@ -58,7 +58,7 @@ class BaseExperiment(ABC):
         :return: None
         """
         import multiprocessing
-        from client.experiments.client_handler_consumer import (
+        from cockroachdb.client.experiments.client_handler_consumer import (
             ClientHandlerConsumer,
         )
 

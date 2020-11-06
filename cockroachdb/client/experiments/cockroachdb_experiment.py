@@ -2,8 +2,8 @@ from typing import Tuple
 
 from peewee import fn
 
-from client.experiments.base import BaseExperiment
-from client.handlers import SingleClientHandlerFactory
+from cockroachdb.client.experiments.base import BaseExperiment
+from cockroachdb.client.handlers import SingleClientHandlerFactory
 from cockroachdb.modules.models import (
     Order,
     OrderLine,
@@ -42,7 +42,7 @@ class CockroachDBExperiment(BaseExperiment):
         :return: selected configuration given experiment number
         """
 
-        from client.config import IS_PROD
+        from cockroachdb.client.config import IS_PROD
 
         configurations = (
             {5: (20, 4), 6: (20, 5), 7: (40, 4), 8: (40, 5)}

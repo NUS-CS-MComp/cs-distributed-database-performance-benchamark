@@ -1,5 +1,5 @@
-from client.config import TRANSACTION_DATA_PATH
-from client.experiments import ExperimentHandlerFactory
+from cockroachdb.client.config import TRANSACTION_DATA_PATH
+from cockroachdb.client.experiments import ExperimentHandlerFactory
 
 if __name__ == "__main__":
     Experiment = ExperimentHandlerFactory.generate_new_experiment(

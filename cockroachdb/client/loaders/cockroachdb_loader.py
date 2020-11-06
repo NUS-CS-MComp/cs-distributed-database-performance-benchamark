@@ -3,7 +3,7 @@ from typing import TypedDict, List, Dict
 
 from peewee import Model
 
-from client.loaders.csv_loader import CSVLoader
+from cockroachdb.client.loaders.csv_loader import CSVLoader
 from cockroachdb.modules.models import (
     Warehouse,
     District,

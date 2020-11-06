@@ -2,7 +2,7 @@ import argparse
 import pathlib
 from typing import Literal, Optional, List
 
-import client.config as config
+import cockroachdb.client.config as config
 
 
 def main():
@@ -49,9 +49,6 @@ def main():
         help="Run experiment in CockroachDB",
         action="store_true",
     )
-    db_group.add_argument(
-        "--cassandra", help="Run experiment in Cassandra", action="store_true"
-    )
 
     parser.add_argument(
         "-en", "--experiment-number", help="Experiment number", type=int
@@ -73,10 +70,8 @@ def main():
 
     args = parser.parse_args()
 
-    database: Optional[Literal["cassandra", "cockroachdb"]] = None
-    if args.cassandra:
-        database = "cassandra"
-    elif args.cockroachdb:
+    database: Optional[Literal["cockroachdb"]] = None
+    if args.cockroachdb:
         database = "cockroachdb"
     if database is None:
         return
@@ -101,7 +96,7 @@ def main():
 
 
 def load_data(
-    database: Literal["cassandra", "cockroachdb"],
+    database: Literal["cockroachdb"],
     data_path: pathlib.Path,
     workers: int,
     batch_size: int,
@@ -119,9 +114,11 @@ def load_data(
     :return: None
     """
     if database == "cockroachdb":
-        from client.config import INIT_DATA_PATH
-        from client.loaders.cockroachdb_loader import CockroachDBCSVLoader
-        from client.loaders.csv_loader import FILE_NAMES
+        from cockroachdb.client.config import INIT_DATA_PATH
+        from cockroachdb.client.loaders.cockroachdb_loader import (
+            CockroachDBCSVLoader,
+        )
+        from cockroachdb.client.loaders.csv_loader import FILE_NAMES
 
         loader = CockroachDBCSVLoader(
             data_dir=INIT_DATA_PATH if data_path is None else data_path,
@@ -135,7 +132,7 @@ def load_data(
 
 
 def run_experiment(
-    database: Literal["cassandra", "cockroachdb"],
+    database: Literal["cockroachdb"],
     experiment_number: int,
     transaction_data_path: pathlib.Path,
     hosts: List[str],
@@ -150,14 +147,14 @@ def run_experiment(
     :param port: database port number
     :return: None
     """
-    from client.config import TRANSACTION_DATA_PATH
-    from client.experiments import ExperimentHandlerFactory
+    from cockroachdb.client.config import TRANSACTION_DATA_PATH
+    from cockroachdb.client.experiments import ExperimentHandlerFactory
 
     factory = None
-    if database == "cassandra":
-        factory = ExperimentHandlerFactory.CASSANDRA
-    elif database == "cockroachdb":
+    if database == "cockroachdb":
         factory = ExperimentHandlerFactory.COCKROACH_DB
+    else:
+        raise NotImplementedError(f"No such DB: {database}")
 
     Experiment = ExperimentHandlerFactory.generate_new_experiment(factory)
     experiment = Experiment(

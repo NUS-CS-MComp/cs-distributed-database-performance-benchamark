@@ -1,6 +1,6 @@
 import multiprocessing
 
-from client.handlers.base import BaseSingleClientHandler
+from cockroachdb.client.handlers.base import BaseSingleClientHandler
 
 
 class ClientHandlerConsumer(multiprocessing.Process):

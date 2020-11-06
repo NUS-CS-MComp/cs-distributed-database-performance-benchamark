@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any
 
-from client.handlers.base import BaseSingleClientHandler
+from cockroachdb.client.handlers.base import BaseSingleClientHandler
 
 
 class CockroachDBSingleClientHandler(BaseSingleClientHandler):

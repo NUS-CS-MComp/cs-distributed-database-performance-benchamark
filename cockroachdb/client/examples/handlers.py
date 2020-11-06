@@ -1,5 +1,5 @@
-from client.config import TRANSACTION_DATA_PATH
-from client.handlers import SingleClientHandlerFactory
+from cockroachdb.client.config import TRANSACTION_DATA_PATH
+from cockroachdb.client.handlers import SingleClientHandlerFactory
 
 if __name__ == "__main__":
     Client = SingleClientHandlerFactory.generate_new_client(
