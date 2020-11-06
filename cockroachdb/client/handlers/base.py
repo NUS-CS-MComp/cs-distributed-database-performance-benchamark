@@ -120,13 +120,6 @@ class BaseSingleClientHandler(ABC):
                     transaction_type = line[0]
                     if transaction_type not in ["N"]:
                         transaction_inputs = line.split(",")[1:]
-                        parsed_inputs = []
-                        for transaction_input in transaction_inputs:
-                            try:
-                                parsed_integer = int(transaction_input)
-                                parsed_inputs.append(parsed_integer)
-                            except ValueError:
-                                parsed_inputs.append(transaction_input)
                     else:
                         transaction_inputs = (
                             BaseSingleClientHandler.parse_new_order_input(
@@ -191,8 +184,7 @@ class BaseSingleClientHandler(ABC):
         :param file_ref: file object reference
         :return: order input ready to be consumed by transaction
         """
-        split_line = current_line.split(",")
-        num_of_items = int(split_line[-1])
+        num_of_items = int(current_line.split(",")[-1])
         item_number_list = []
         supplier_warehouse_list = []
         quantity_list = []
@@ -201,13 +193,9 @@ class BaseSingleClientHandler(ABC):
             item_number_list.append(int(detail[0]))
             supplier_warehouse_list.append(int(detail[1]))
             quantity_list.append(int(detail[2]))
-        customer_identifier = (
-            int(split_line[2]),
-            int(split_line[3]),
-            int(split_line[1]),
-        )
         transaction_inputs = [
-            customer_identifier,
+            tuple(current_line.split(",")[2:4])
+            + (current_line.split(",")[1],),
             num_of_items,
             item_number_list,
             supplier_warehouse_list,
