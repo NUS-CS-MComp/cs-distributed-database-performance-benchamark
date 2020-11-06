@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Process
+import threading
 from datetime import datetime
 from decimal import Decimal
 from transactions import utils
 
 
 def delivery(session, w_id, carrier_id):
-    for district_no in range(1, 11):
+    def handle_district(i):
         rows = utils.do_query(session, 
             '''
             SELECT MIN(O_ID), O_C_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_CARRIER_ID = 'null' ALLOW FILTERING
@@ -57,4 +60,8 @@ def delivery(session, w_id, carrier_id):
         balance += Decimal(utils.single_select(session, 'SELECT C_BALANCE_CHANGE FROM customer_counters WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s',
             (w_id, district_no, c))) / Decimal(100)
         utils.do_query(session, 'UPDATE customer SET C_BALANCE = %s WHERE C_W_ID = %s AND C_D_ID = %s AND C_ID = %s', (balance, w_id, district_no, c))
+
+    with ThreadPool(10) as pool:
+        pool.map(handle_district, range(1, 11))
+    
     return None
