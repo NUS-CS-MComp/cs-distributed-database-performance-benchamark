@@ -9,7 +9,7 @@ Set cluster name:
 ```yaml
 cluster_name: 'CS5424 GrpO'
 ```
-Set addresses of bootstrapping points
+Set addresses of bootstrapping points:
 ```yaml
 seed_provider:
     - class_name: org.apache.cassandra.locator.SimpleSeedProvider
@@ -19,11 +19,11 @@ seed_provider:
           # Here we use xcnc35.comp.nus.edu.sg and xcnc36.comp.nus.edu.sg as seeds
           - seeds: "192.168.48.184,192.168.48.185"
 ```
-Set listen address
+Set listen address:
 ```yaml
 listen_address:  # Leave it blank
 ```
-Set request timeout
+Set request timeout:
 ```yaml
 # Use larger timeouts to handle aggregate queries on database state
 read_request_timeout_in_ms: 500000
@@ -48,48 +48,48 @@ We assume our project's root directory of Cassandra is `/cassandra-root/`. So fo
 For the data files and transaction files in the given `project-files.zip`, we assume they have been downloaded to `/cassandra-root/project-files/data-files/` and `/cassandra-root/project-files/xact-files/` respectively.
 
 ### Database preprocessing
-Run CQLSH
+Run CQLSH:
 ```bash
 cqlsh
 ```
-Create tables and import CSV files
+Create tables and import CSV files:
 ```bash
 source '/cassandra-root/src/setup.cql'
 ```
-_Preprocess tables (for experiment 1 & 3)_
+_Preprocess tables (for experiment 1 & 3):_
 ```bash
 python3 /cassandra-root/src/main.py QUORUM preprocess
 ```
-_Preprocess tables (for experiment 2 & 4)_
+_Preprocess tables (for experiment 2 & 4):_
 ```bash
 python3 /cassandra-root/src/main.py ROWA preprocess
 ```
 Start experiment on each node simultaneously
-(For experiment _i_ and node _j_)
+(For experiment _i_ and node _j_):
 ```bash
 sh /cassandra-root/experiments/node<j>/ex<i>.sh
 ```
 Check the states of each client  (running or terminated)
-(For experiment _i_)
+(For experiment _i_):
 ```bash
 wc -l exp<i>*
 ```
 Retrieve database state
-(For experiment _i_)
+(For experiment _i_):
 ```bash
 python3 /cassandra-root/src/stats/db_state.py <i>
 ```
 
 ### Postprocessing
-Merge runtime statistics of each client
+Merge runtime statistics of each client:
 ```bash
 sh /cassandra-root/experiments/cat_all.sh
 ```
-Merge throughput statistics of each experiment
+Merge throughput statistics of each experiment:
 ```bash
 python3 /cassandra-root/src/stats/throughputs.py /cassandra-root/project-files/output-files/clients.csv
 ```
-Merge database states
+Merge database states:
 ```bash
 sh /cassandra-root/src/stats/cat_db_state.sh
 ```
