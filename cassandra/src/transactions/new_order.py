@@ -33,8 +33,9 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     adjusted_qty = [0] * num_items
     cql_insert_item_orders = session.prepare("INSERT INTO item_orders (W_ID, I_ID, O_ID, D_ID, C_ID) VALUES (?, ?, ?, ?, ?)")
 
-    def handle_item(i):
-        nonlocal total_amount
+    # def handle_item(i):
+    #     nonlocal total_amount
+    for i in range(num_items):
         # Step 5a
         s_quantity = utils.single_select(session, 'SELECT S_QUANTITY FROM stock WHERE S_W_ID = %s AND S_I_ID = %s',
             (supplier_warehouse[i], item_number[i]))
@@ -81,9 +82,9 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         # Populate the item_orders table for each item-order pair
         utils.do_query(session, cql_insert_item_orders, (w_id, item_number[i], n, d_id, c_id), query_type='write')
 
-    pool = ThreadPool(8)
-    pool.map(handle_item, range(num_items))
-    pool.close()
+    # pool = ThreadPool(8)
+    # pool.map(handle_item, range(num_items))
+    # pool.close()
     
     # Create order after creating all order-lines, so that when querying for popular items there will be no error
     utils.do_query(session, 
