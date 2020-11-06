@@ -179,8 +179,7 @@ For the following steps, we recommend you to run the program in the server as th
 #### Load Initial Data with Specified Worker and Batch Size
 
 ```bash
-ENV=prod python -m cockroachdb.client.main -l --cockroachdb --workers 16 --batch-size 2999 --ports=26257 \
-    --hosts xcnc35.comp.nus.edu.sg,xcnc36.comp.nus.edu.sg,xcnc37.comp.nus.edu.sg,xcnc38.comp.nus.edu.sg,xcnc39.comp.nus.edu.sg
+ENV=prod python -m cockroachdb.client.main -l --cockroachdb --workers 16 --batch-size 2999 --port=26257 --hosts xcnc35.comp.nus.edu.sg,xcnc36.comp.nus.edu.sg,xcnc37.comp.nus.edu.sg,xcnc38.comp.nus.edu.sg,xcnc39.comp.nus.edu.sg
 ```
 
 > It is important to set `ENV=prod` unless you want to test it locally
@@ -188,9 +187,8 @@ ENV=prod python -m cockroachdb.client.main -l --cockroachdb --workers 16 --batch
 ### Run Experiment with Specified Experiment Number
 
 ```bash
-# Run Experiment 5 on CockroachDB
-ENV=prod python -m cockroachdb.client.main -e --cockroachdb -en 5 --ports=26257 \
-    --hosts xcnc35.comp.nus.edu.sg,xcnc36.comp.nus.edu.sg,xcnc37.comp.nus.edu.sg,xcnc38.comp.nus.edu.sg
+# Run Experiment 5 on CockroachDB (with only 4 instances in the hosts)
+ENV=prod python -m cockroachdb.client.main -e --cockroachdb -en 5 --port=26257 --hosts xcnc35.comp.nus.edu.sg,xcnc36.comp.nus.edu.sg,xcnc37.comp.nus.edu.sg,xcnc38.comp.nus.edu.sg
 ```
 
 > Caveat: the values specified should match the one you provide in `bootstrap.sh`
