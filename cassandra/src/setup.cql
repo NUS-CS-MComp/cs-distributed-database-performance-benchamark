@@ -245,7 +245,7 @@ CREATE TABLE related_customers (
     R_ID              int,
     R_W_ID            int,
     R_D_ID            int,
-    PRIMARY KEY ((C_W_ID, C_D_ID, C_ID), R_ID)
+    PRIMARY KEY ((C_W_ID, C_D_ID, C_ID), R_W_ID, R_D_ID, R_ID)
 );
 
 DROP TABLE IF EXISTS item_orders;

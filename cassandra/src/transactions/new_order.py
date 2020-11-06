@@ -130,7 +130,7 @@ def populate_related_customers(session, w_id, d_id, c_id, item_number):
     if len(all_warehouse) == 0:
         warehouses = utils.do_query(session, 'SELECT W_ID FROM warehouse ALLOW FILTERING')
         all_warehouse = [w.w_id for w in warehouses]
-    cql_get = session.prepare("SELECT C_ID, D_ID FROM item_orders WHERE W_ID = ? AND I_ID IN ?")
+    cql_get = session.prepare("SELECT C_ID, D_ID, O_ID FROM item_orders WHERE W_ID = ? AND I_ID IN ?")
     cql_insert = session.prepare("INSERT INTO related_customers (C_W_ID, C_D_ID, C_ID, R_W_ID, R_D_ID, R_ID) VALUES (?, ?, ?, ?, ?, ?)")
     for w in all_warehouse:
         if w == w_id:
@@ -141,7 +141,7 @@ def populate_related_customers(session, w_id, d_id, c_id, item_number):
 def get_customers_from_warehouse(session, cql_get, cql_insert, w_id, d_id, c_id, other_w, item_number):
     customers = utils.do_query(session, cql_get, (other_w, item_number), query_type='read')
     relevant_customers = [c for c in customers]
-    counter = Counter([(c.c_id, c.d_id) for c in relevant_customers])
+    counter = Counter([(c.c_id, c.o_id, c.d_id) for c in relevant_customers])
     related_customers = [c for c in counter if counter[c] > 1]
 
     for rc in related_customers:

@@ -1,7 +1,7 @@
 #!/usr/bin/bash
-SCRIPT_PATH="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/src/main.py"
-XACT_FILE_DIR="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/project-files/xact-files/"
-OUTPUT_FILE_DIR="/home/stuproj/cs4224o/cs5424-distributed-database-group-project/cassandra/project-files/output-files/"
+SCRIPT_PATH=$1
+XACT_FILE_DIR=$2
+OUTPUT_FILE_DIR=$3
 
 for i in {3..40..5}
 do

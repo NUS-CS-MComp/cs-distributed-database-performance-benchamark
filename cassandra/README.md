@@ -64,10 +64,22 @@ _Preprocess tables (for experiment 2 & 4):_
 ```bash
 python3 /cassandra-root/src/main.py ROWA preprocess
 ```
-Start experiment on each node simultaneously
-(For experiment _i_ and node _j_):
+Preprocessing the tables takes approximately 1.5 hours.
+It's better to export the preprocessed table so that they can be easily imported next time.
+We provided two cql scripts, namely export_preprocessed.cql and import_preprocessed.cql for this purpose.
+Note that the cql script does not support CLI arguments, so the user needs to customize the source/destination directory in the script themselves.
+Execute the following in cqlsh:
 ```bash
-sh /cassandra-root/experiments/node<j>/ex<i>.sh
+source '/cassandra-root/src/export_preprocessed.cql
+source '/cassandra-root/src/import_preprocessed.cql
+```
+Start experiment on each node simultaneously
+(For experiment _i_ and node _j_, path to main.py script _s_, path to directory with xact test files _x_, path to output directory _o_):
+```bash
+s=
+x=
+o=
+sh /cassandra-root/experiments/node<j>/ex<i>.sh s x o
 ```
 Check the states of each client  (running or terminated)
 (For experiment _i_):
@@ -81,9 +93,11 @@ python3 /cassandra-root/src/stats/db_state.py <i>
 ```
 
 ### Postprocessing
-Merge runtime statistics of each client:
+Merge runtime statistics of each client
+(Given _output_ which is the path to the output directory where all the metric files reside in):
 ```bash
-sh /cassandra-root/experiments/cat_all.sh
+output=
+sh /cassandra-root/experiments/cat_all.sh output
 ```
 Merge throughput statistics of each experiment:
 ```bash
