@@ -8,8 +8,8 @@ def delivery(session, w_id, carrier_id):
     for district_no in range(1, 11):
         rows = utils.do_query(session, 
             '''
-            SELECT O_ID, O_C_ID FROM undelivered_orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_CARRIER_ID = 'null' LIMIT 1
-            ''',    # min O_ID
+            SELECT MIN(O_ID), O_C_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_CARRIER_ID = 'null' ALLOW FILTERING
+            ''',
             (w_id, district_no)
         )
         n = None; c = None
@@ -21,7 +21,7 @@ def delivery(session, w_id, carrier_id):
         utils.do_query(session, 
             '''
             UPDATE orders SET O_CARRIER_ID = '%s'
-            WHERE O_W_ID = %s AND O_D_ID = %s AND O_ID = %s AND O_CARRIER_ID = 'null'
+            WHERE O_W_ID = %s AND O_D_ID = %s AND O_ID = %s
             ''',
             (carrier_id, w_id, district_no, n)
         )

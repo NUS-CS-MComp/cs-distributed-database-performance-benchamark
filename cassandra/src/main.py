@@ -21,12 +21,12 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit('Args required!')
     if sys.argv[1] == 'ROWA':
-        read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.ONE)
-        write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.ALL)
+        read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.ONE, request_timeout=1000.0)
+        write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.ALL, request_timeout=1000.0)
         exec_profile = {'read': read_profile, 'write': write_profile}
     elif sys.argv[1] == 'QUORUM':
-        read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
-        write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM)
+        read_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM, request_timeout=1000.0)
+        write_profile = ExecutionProfile(consistency_level=ConsistencyLevel.QUORUM, request_timeout=1000.0)
         exec_profile = {'read': read_profile, 'write': write_profile}
     else:
         sys.exit('Argument not valid! (consistency level required)')
