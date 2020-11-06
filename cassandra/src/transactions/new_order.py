@@ -74,10 +74,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
         dist_info = utils.single_select(session, 'SELECT {} FROM stock WHERE S_W_ID = {} AND S_I_ID = {}'.format(dist_name, supplier_warehouse[i], item_number[i]))
         utils.do_query(session, 
             '''
-            INSERT INTO order_line (OL_O_ID, OL_D_ID, OL_W_ID, OL_NUMBER, OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DELIVERY_D, OL_DIST_INFO)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO order_line (OL_O_ID, OL_D_ID, OL_W_ID, OL_NUMBER, OL_I_ID, OL_SUPPLY_W_ID, OL_QUANTITY, OL_AMOUNT, OL_DIST_INFO)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''',
-            (n, d_id, w_id, i, item_number[i], supplier_warehouse[i], quantity[i], item_amount[i], "null", dist_info)
+            (n, d_id, w_id, i, item_number[i], supplier_warehouse[i], quantity[i], item_amount[i], dist_info)
         )
         # Populate the item_orders table for each item-order pair
         utils.do_query(session, cql_insert_item_orders, (w_id, item_number[i], n, d_id, c_id), query_type='write')
@@ -89,10 +89,10 @@ def new_order(session, w_id, d_id, c_id, num_items, item_number, supplier_wareho
     # Create order after creating all order-lines, so that when querying for popular items there will be no error
     utils.do_query(session, 
         '''
-        INSERT INTO orders (O_ID, O_D_ID, O_W_ID, O_C_ID, O_ENTRY_D, O_CARRIER_ID, O_OL_CNT, O_ALL_LOCAL)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO orders (O_ID, O_D_ID, O_W_ID, O_C_ID, O_ENTRY_D, O_OL_CNT, O_ALL_LOCAL)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         ''',
-        (n, d_id, w_id, c_id, datetime.now(), "null", num_items, all_local)
+        (n, d_id, w_id, c_id, datetime.now(), num_items, all_local)
     )
 
     # Step 6
