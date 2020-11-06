@@ -8,7 +8,7 @@ from transactions import utils
 
 
 def delivery(session, w_id, carrier_id):
-    def handle_district(i):
+    def handle_district(district_no):
         rows = utils.do_query(session, 
             '''
             SELECT MIN(O_ID), O_C_ID FROM orders WHERE O_W_ID = %s AND O_D_ID = %s AND O_CARRIER_ID = 'null' ALLOW FILTERING
@@ -20,7 +20,7 @@ def delivery(session, w_id, carrier_id):
             n = row[0]; c = row[1]
             break
         if n == None:   # no undelivered orders in this district
-            continue
+            return
         utils.do_query(session, 
             '''
             UPDATE orders SET O_CARRIER_ID = '%s'
